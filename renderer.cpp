@@ -44,6 +44,7 @@ void SWRenderer::setSize(int w, int h)
 {
 	_image.resize(h, w);
 	_depth.resize(h, w);
+	_points.resize(h, w);
 	clear();
 }
 
@@ -59,6 +60,7 @@ void SWRenderer::clear()
 		{
 			_image(i, j) = Vec3(0, 0, 0);
 			_depth(i, j) = 1e9f;
+			_points(i, j) = Vec3(0, 0, 0);
 		}
 }
 
@@ -149,6 +151,7 @@ void SWRenderer::paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c
 				float specular = pow(max((_light + viewDir).normalized() * normal, 0.0f), _shininess);
 				Vec3 value = max(0.0f, normal.normalized() * _light) * _color + specular * _specular + _ambient;
 				_image(y, x) = value;
+				_points(y, x) = position;
 			}
 		}
 	}

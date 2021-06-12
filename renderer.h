@@ -12,6 +12,7 @@ class SWRenderer
 {
 	asl::Array2<asl::Vec3> _image;
 	asl::Array2<float> _depth;
+	asl::Array2<asl::Vec3> _points;
 	asl::Matrix4 _view;
 	asl::Matrix4 _projection;
 	asl::Matrix4 _modelview;
@@ -35,6 +36,7 @@ public:
 	void paintMesh(TriMesh* mesh, const asl::Matrix4& transform);
 	void paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c);
 	asl::Array2<asl::Vec3> getImage();
+	asl::Array2<asl::Vec3> getRangeImage() { return _points; }
 };
 
 void saveImage(const asl::Array2<asl::Vec3>& image, const asl::String& filename);
