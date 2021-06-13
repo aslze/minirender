@@ -33,7 +33,7 @@ public:
 	void setLight(const asl::Vec3& v) { _light = v; }
 	void clear();
 	void render();
-	void paintMesh(TriMesh* mesh, const asl::Matrix4& transform);
+	void paintMesh(TriMesh* mesh, const asl::Matrix4& transform = asl::Matrix4::identity());
 	void paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c);
 	asl::Array2<asl::Vec3> getImage();
 	asl::Array2<asl::Vec3> getRangeImage() { return _points; }

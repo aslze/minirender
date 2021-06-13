@@ -115,8 +115,7 @@ void SWRenderer::paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c
 	pmin.y = (float)clamp((int)pmin.y, 0, _image.rows()-1);
 	pmax.y = (float)clamp((int)pmax.y, 0, _image.rows()-1);
 
-	Vec3 normal01 = vertices[1].normal - vertices[0].normal;
-	Vec3 normal02 = vertices[2].normal - vertices[0].normal;
+	float iz[] = { 1 / zz[0], 1 / zz[1], 1 / zz[2] };
 
 	for(float y = floor(pmin.y); y <= pmax.y; y++)
 	{
@@ -136,17 +135,13 @@ void SWRenderer::paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c
 			if (z < pixdepth)
 			{
 				pixdepth = z;
-
-				// perspective-correct (?)
-				float iz = 1 / zz[0] + k1 * (1 / zz[1] - 1 / zz[0]) + k2 * (1 / zz[2] - 1 / zz[0]);
-				z = 1 / iz;
-				if (fabs(zz[1] - zz[0]) < 0.00001f)
-					k1 = (z - zz[0]) / (zz[1] - zz[0]);
-				if (fabs(zz[2] - zz[0]) < 0.00001f)
-					k2 = (z - zz[0]) / (zz[2] - zz[0]);
-
-				Vec3 normal = vertices[0].normal + k1 * normal01 + k2 * normal02;
-				Vec3 position = vertices[0].position + k1 * (vertices[1].position - vertices[0].position) + k2 * (vertices[2].position - vertices[0].position);
+				float inz = iz[0] + k1 * (iz[1] - iz[0]) + k2 * (iz[2] - iz[0]);
+				z = 1 / inz;
+				float k0 = z * iz[0] * (1 - k1 - k2);
+				k1 = k1 * z * iz[1];
+				k2 = k2 * z * iz[2];
+				Vec3 normal = k0 * vertices[0].normal + k1 * vertices[1].normal + k2 * vertices[2].normal;
+				Vec3 position = k0 * vertices[0].position + k1 * vertices[1].position + k2 * vertices[2].position;
 				Vec3 viewDir = -position.normalized();
 				float specular = pow(max((_light + viewDir).normalized() * normal, 0.0f), _shininess);
 				Vec3 value = max(0.0f, normal.normalized() * _light) * _color + specular * _specular + _ambient;
