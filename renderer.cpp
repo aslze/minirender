@@ -70,9 +70,9 @@ void SWRenderer::clear()
 }
 
 
-void SWRenderer::paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c)
+void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v2)
 {
-	Vertex vertices[3] = {a, b, c};
+	Vertex vertices[3] = {v0, v1, v2};
 	Vec4 cverts[3];
 	Vec3 ndc[3];
 	for (int i = 0; i < 3; i++)
@@ -100,21 +100,17 @@ void SWRenderer::paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c
 	if (pmax.x < 0 || pmax.y < 0 || pmin.x > _image.cols() || pmin.y > _image.rows())
 		return;
 
-	float a0 = -((p[0] - p[1]) ^ (p[2] - p[1]) / 2);
-	float i2a = 1.0f / (2 * a0);
-	if(a0 == 0)
-		i2a = 0;
+	float a = -((p[0] - p[1]) ^ (p[2] - p[1]) / 2);
+	float i2a = (a == 0) ? 0.0f : 1.0f / (2 * a);
 
-	if (a0 < 0) // front face
+	if (a < 0) // front face
 	{
 		return; // back face cull
 	}
 
-	Vec2 n0 = (p[2] - p[1]).perpend();
-	Vec2 n1 = (p[0] - p[2]).perpend();
-	Vec2 n2 = (p[1] - p[0]).perpend();
-
-	float a2 = 2.0f * a0;
+	Vec2 n0 = (p[2] - p[1]).perpend() * i2a;
+	Vec2 n1 = (p[0] - p[2]).perpend() * i2a;
+	Vec2 n2 = (p[1] - p[0]).perpend() * i2a;
 
 	pmin.x = (float)clamp((int)pmin.x, 0, _image.cols()-1);
 	pmax.x = (float)clamp((int)pmax.x, 0, _image.cols()-1);
@@ -133,10 +129,10 @@ void SWRenderer::paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c
 		float e2 = n2 * (pt - p[0]);
 		for(float x = floor(pmin.x); x <= pmax.x; x++, e1 += n1.x, e2 += n2.x)
 		{
-			if(e1 < 0 || e2 < 0 || a2 - e1 - e2 < 0)
+			if(e1 < 0 || e2 < 0 || 1 - e1 - e2 < 0)
 				continue;
-			float k1 = e1 * i2a;
-			float k2 = e2 * i2a;
+			float k1 = e1;
+			float k2 = e2;
 			float k0 = 1 - k1 - k2;
 	
 			float z = k0 * zz[0] + k1 * zz[1] + k2 * zz[2];
