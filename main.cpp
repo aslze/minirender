@@ -1,5 +1,6 @@
 #include "Scene.h"
 #include "renderer.h"
+#include "io.h"
 #include <asl/CmdArgs.h>
 
 using namespace asl;
@@ -29,10 +30,10 @@ int main(int argc, char* argv[])
 	{
 		double t3 = now();
 		renderer.clear();
-		renderer.setView(Matrix4::translate(0, 30, -100) * Matrix4::rotateY(3.8f + 0.1f * i) * Matrix4::rotateZ(0.1f) * Matrix4::rotateX(-0.35f));
+		renderer.setView(Matrix4::translate(0, 0, -100) * Matrix4::rotateY(3.8f + 0.1f * i) * Matrix4::rotateZ(0.1f) * Matrix4::rotateX(-0.35f));
 		renderer.paintMesh(shape, Matrix4::rotateY(i*0.1f));
 
-		saveImage(renderer.getImage(), String::f("out%04i.ppm", (int)i));
+		savePPM(renderer.getImage(), String::f("out%04i.ppm", (int)i));
 
 		double t5 = now();
 	}

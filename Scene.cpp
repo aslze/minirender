@@ -17,7 +17,6 @@ TriMesh::TriMesh()
 }
 
 Material::Material():
-	ambient(0.1f, 0.1f, 0.1f),
 	diffuse(0.7f, 0.7f, 0.9f),
 	specular(0.8f, 0.8f, 0.8f),
 	emissive(0, 0, 0),

@@ -1,6 +1,6 @@
 #include <asl/TextFile.h>
 #include <asl/StreamBuffer.h>
-#include "Scene.h"
+#include "io.h"
 
 using namespace asl;
 
@@ -129,3 +129,66 @@ void saveSTL(TriMesh* mesh, const String& name)
 		file << (short)0;
 	}
 }
+
+
+void savePPM(const asl::Array2<asl::Vec3>& image, const asl::String& filename)
+{
+	File file(filename, File::WRITE);
+	String header;
+	header << "P6\n" << image.cols() << " " << image.rows() << "\n" << 255 << "\n";
+	file << header;
+	Array<byte> data(image.cols() * 3);
+
+	for (int i = image.rows() - 1; i >= 0; i--)
+	{
+		for (int j = 0; j < image.cols(); j++)
+		{
+			Vec3 value = image(i, j) * 255.0f;
+			data[j * 3] = (byte)clamp(value.x, 0.0f, 255.0f);
+			data[j * 3 + 1] = (byte)clamp(value.y, 0.0f, 255.0f);
+			data[j * 3 + 2] = (byte)clamp(value.z, 0.0f, 255.0f);
+		}
+		file.write(data.ptr(), data.length());
+	}
+}
+
+asl::Array2<asl::Vec3> loadPPM(const asl::String& filename)
+{
+	asl::Array2<asl::Vec3> image;
+	File file(filename, File::READ);
+	if (!file)
+		return image;
+	String header;
+	int nl = 0;
+	do {
+		char c = file.read<char>();
+		if (c == '\n')
+			nl++;
+		header << c;
+	} while (nl < 3 && !file.end());
+
+	Array<String> parts = header.split();
+
+	if (parts.length() != 4 || parts[0] != "P6")
+		return image;
+	image.resize(parts[2], parts[1]);
+
+	Array<byte> data(image.cols() * 3);
+
+	for (int i = image.rows() - 1; i >= 0; i--)
+	{
+		int n = file.read(data.ptr(), data.length());
+		if (n < data.length())
+			break;
+		for (int j = 0; j < image.cols(); j++)
+		{
+			float r = data[j * 3];
+			float g = data[j * 3 + 1];
+			float b = data[j * 3 + 2];
+			image(i, j) = Vec3(r, g, b) / 255.0f;
+		}
+	}
+
+	return image;
+}
+

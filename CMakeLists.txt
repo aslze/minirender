@@ -9,7 +9,8 @@ find_package(ASL REQUIRED)
 set(SRC
     Scene.h
     Scene.cpp
-    loadStl.cpp
+    io.h
+    io.cpp
     renderer.h
     renderer.cpp
     main.cpp

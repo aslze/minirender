@@ -21,7 +21,7 @@ struct Vertex
 
 struct Material
 {
-	asl::Vec3 ambient, diffuse, specular, emissive;
+	asl::Vec3 diffuse, specular, emissive;
 	float shininess, opacity;
 	Material();
 };
@@ -52,8 +52,5 @@ struct TriMesh : public Shape
 	TriMesh();
 };
 
-
-TriMesh* loadSTL(const asl::String& filename);
-void saveSTL(TriMesh* mesh, const asl::String& name);
 
 #endif

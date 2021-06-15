@@ -7,6 +7,7 @@
 asl::Matrix4 projectionOrtho(float l, float r, float b, float t, float n, float f);
 asl::Matrix4 projectionPerspective(float l, float r, float b, float t, float n, float f);
 asl::Matrix4 projectionFrustum(float fov, float aspect, float n, float f);
+asl::Matrix4 projectionOrtho(float fov, float aspect, float n, float f);
 
 class SWRenderer
 {
@@ -16,7 +17,7 @@ class SWRenderer
 	asl::Matrix4 _view;
 	asl::Matrix4 _projection;
 	asl::Matrix4 _modelview;
-	asl::Matrix4 _normal;
+	asl::Matrix4 _normalmat;
 	asl::Vec3 _light;
 	asl::Vec3 _color;
 	asl::Vec3 _specular;
@@ -38,8 +39,5 @@ public:
 	asl::Array2<asl::Vec3> getImage();
 	asl::Array2<asl::Vec3> getRangeImage() { return _points; }
 };
-
-void saveImage(const asl::Array2<asl::Vec3>& image, const asl::String& filename);
-asl::Array2<asl::Vec3> loadImage(const asl::String& filename);
 
 #endif

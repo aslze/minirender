@@ -16,9 +16,9 @@ Matrix4 projectionOrtho(float l, float r, float b, float t, float n, float f)
 Matrix4 projectionPerspective(float l, float r, float b, float t, float n, float f)
 {
 	return Matrix4(
-		2*n/(r-l), 0, (r+l)/(r-l), 0,
-		0, 2*n/(t-b), (t+b)/(t-b), 0,
-		0, 0, -(f+n)/(f-n), -2*f*n/(f-n),
+		2 * n / (r - l), 0, (r + l) / (r - l), 0,
+		0, 2 * n / (t - b), (t + b) / (t - b), 0,
+		0, 0, -(f + n) / (f - n), -2 * f * n / (f - n),
 		0, 0, -1, 0);
 }
 
@@ -26,6 +26,11 @@ Matrix4 projectionFrustum(float fov, float aspect, float n, float f)
 {
 	float t = tan(fov / 2);
 	return projectionPerspective(-n*t*aspect, n*t * aspect, -n * t, n * t, n, f);
+}
+
+Matrix4 projectionOrtho(float fov, float aspect, float n, float f)
+{
+	return projectionOrtho(-fov*aspect/2, fov*aspect/2, -fov/2, fov/2, n, f);
 }
 
 
@@ -68,18 +73,20 @@ void SWRenderer::clear()
 void SWRenderer::paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c)
 {
 	Vertex vertices[3] = {a, b, c};
+	Vec4 cverts[3];
 	Vec3 ndc[3];
 	for (int i = 0; i < 3; i++)
 	{
 		vertices[i].position = _modelview * vertices[i].position;
-		vertices[i].normal = _normal * vertices[i].normal;
-		ndc[i] = (_projection * asl::Vec4(vertices[i].position, 1.0f)).h2c();
+		vertices[i].normal = _normalmat * vertices[i].normal;
+		cverts[i] = _projection * asl::Vec4(vertices[i].position, 1.0f);
+		ndc[i] = cverts[i].h2c();
 	}
 
 	if(ndc[0].z < -1 || ndc[1].z < -1 || ndc[2].z < -1) // near clip (should clip into 0, 1 or 2 triangles)
 		return;
 	
-	for(int i = 0; i < 3; i++) // to pixel coords
+	for(int i = 0; i < 3; i++) // pixel coords
 	{
 		ndc[i].x = (ndc[i].x + 1) * _image.cols() / 2;
 		ndc[i].y = (ndc[i].y + 1) * _image.rows() / 2;
@@ -93,8 +100,7 @@ void SWRenderer::paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c
 	if (pmax.x < 0 || pmax.y < 0 || pmin.x > _image.cols() || pmin.y > _image.rows())
 		return;
 
-	float zz[3] = {-vertices[0].position.z, -vertices[1].position.z, -vertices[2].position.z};
-	float a0 = -((p[0]-p[1])^(p[2]-p[1]) / 2);
+	float a0 = -((p[0] - p[1]) ^ (p[2] - p[1]) / 2);
 	float i2a = 1.0f / (2 * a0);
 	if(a0 == 0)
 		i2a = 0;
@@ -115,7 +121,10 @@ void SWRenderer::paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c
 	pmin.y = (float)clamp((int)pmin.y, 0, _image.rows()-1);
 	pmax.y = (float)clamp((int)pmax.y, 0, _image.rows()-1);
 
-	float iz[] = { 1 / zz[0], 1 / zz[1], 1 / zz[2] };
+	float zz[] = { ndc[0].z, ndc[1].z, ndc[2].z };
+	float iz[] = { 1 / -vertices[0].position.z, 1 / -vertices[1].position.z, 1 / -vertices[2].position.z };
+
+	bool persp = _projection(3, 3) == 0;
 
 	for(float y = floor(pmin.y); y <= pmax.y; y++)
 	{
@@ -128,18 +137,22 @@ void SWRenderer::paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c
 				continue;
 			float k1 = e1 * i2a;
 			float k2 = e2 * i2a;
+			float k0 = 1 - k1 - k2;
 	
-			float z = zz[0] + k1 * (zz[1]-zz[0]) + k2 * (zz[2] - zz[0]);
+			float z = k0 * zz[0] + k1 * zz[1] + k2 * zz[2];
 
 			auto& pixdepth = _depth(y, x);
 			if (z < pixdepth)
 			{
 				pixdepth = z;
-				float inz = iz[0] + k1 * (iz[1] - iz[0]) + k2 * (iz[2] - iz[0]);
-				z = 1 / inz;
-				float k0 = z * iz[0] * (1 - k1 - k2);
-				k1 = k1 * z * iz[1];
-				k2 = k2 * z * iz[2];
+				float k0 = 1 - k1 - k2;
+				if (persp)
+				{
+					z = 1 / (k0 * iz[0] + k1 * iz[1] + k2 * iz[2]);
+					k0 *= z * iz[0];
+					k1 *= z * iz[1];
+					k2 *= z * iz[2];
+				}
 				Vec3 normal = k0 * vertices[0].normal + k1 * vertices[1].normal + k2 * vertices[2].normal;
 				Vec3 position = k0 * vertices[0].position + k1 * vertices[1].position + k2 * vertices[2].position;
 				Vec3 viewDir = -position.normalized();
@@ -161,7 +174,7 @@ void SWRenderer::render()
 void SWRenderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 {
 	_modelview = _view * transform;
-	_normal = _modelview.inverse().t();
+	_normalmat = _modelview.inverse().t();
 	for (int i = 0; i < mesh->indices.length(); i += 3)
 	{
 		int ia = mesh->indices[i];
@@ -176,68 +189,6 @@ void SWRenderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 		paintTriangle(Vertex(a, na), Vertex(b, nb), Vertex(c, nc));
 	}
 }
-
-void saveImage(const asl::Array2<asl::Vec3>& image, const asl::String& filename)
-{
-	File file(filename, File::WRITE);
-	String header;
-	header << "P6\n" << image.cols() << " " << image.rows() << "\n" << 255 << "\n";
-	file << header;
-	Array<byte> data(image.cols() * 3);
-
-	for (int i = image.rows() - 1; i >= 0; i--)
-	{
-		for (int j = 0; j < image.cols(); j++)
-		{
-			Vec3 value = image(i, j) * 255.0f;
-			data[j * 3]     = (byte)clamp(value.x, 0.0f, 255.0f);
-			data[j * 3 + 1] = (byte)clamp(value.y, 0.0f, 255.0f);
-			data[j * 3 + 2] = (byte)clamp(value.z, 0.0f, 255.0f);
-		}
-		file.write(data.ptr(), data.length());
-	}
-}
-
-asl::Array2<asl::Vec3> loadImage(const asl::String& filename)
-{
-	asl::Array2<asl::Vec3> image;
-	File file(filename, File::READ);
-	if (!file)
-		return image;
-	String header;
-	int nl = 0;
-	do {
-		char c = file.read<char>();
-		if (c == '\n')
-			nl++;
-		header << c;
-	} while (nl < 3 && !file.end());
-
-	Array<String> parts = header.split();
-
-	if (parts.length() != 4 || parts[0] != "P6")
-		return image;
-	image.resize(parts[2], parts[1]);
-
-	Array<byte> data(image.cols() * 3);
-
-	for (int i = image.rows() - 1; i >= 0; i--)
-	{
-		int n = file.read(data.ptr(), data.length());
-		if (n < data.length())
-			break;
-		for (int j = 0; j < image.cols(); j++)
-		{
-			float r = data[j * 3];
-			float g = data[j * 3 + 1];
-			float b = data[j * 3 + 2];
-			image(i, j) = Vec3(r, g, b) / 255.0f;
-		}
-	}
-
-	return image;
-}
-
 
 asl::Array2<asl::Vec3> SWRenderer::getImage()
 {
