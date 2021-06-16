@@ -21,7 +21,7 @@ class SWRenderer
 	asl::Vec3 _light;
 	asl::Vec3 _color;
 	asl::Vec3 _specular;
-	asl::Vec3 _ambient;
+	float _ambient;
 	float _shininess;
 	TriMesh* _object;
 public:

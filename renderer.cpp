@@ -40,7 +40,7 @@ SWRenderer::SWRenderer()
 	_projection = projectionOrtho(-40, 40, -30, 30, 50, 120);
 	_light = Vec3(-0.15f, 0.6f, 1).normalized();
 	_color = Vec3(1, 0, 0.2f);
-	_ambient = Vec3(0.1f, 0.1f, 0.1f);
+	_ambient = 0.1f;
 	_specular = Vec3(0.8f, 0.8f, 0.8f);
 	_shininess = 12.0f;
 }
@@ -153,7 +153,7 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 				Vec3 position = k0 * vertices[0].position + k1 * vertices[1].position + k2 * vertices[2].position;
 				Vec3 viewDir = -position.normalized();
 				float specular = pow(max((_light + viewDir).normalized() * normal, 0.0f), _shininess);
-				Vec3 value = max(0.0f, normal.normalized() * _light) * _color + specular * _specular + _ambient;
+				Vec3 value = (max(0.0f, normal.normalized() * _light) + _ambient) * _color + specular * _specular;
 				_image(y, x) = value;
 				_points(y, x) = position;
 			}
