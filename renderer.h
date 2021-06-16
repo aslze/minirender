@@ -24,6 +24,7 @@ class SWRenderer
 	float _ambient;
 	float _shininess;
 	TriMesh* _object;
+	void clipTriangle(float z, Vertex v[3]);
 public:
 	SWRenderer();
 	void setSize(int w, int h);
@@ -35,7 +36,7 @@ public:
 	void clear();
 	void render();
 	void paintMesh(TriMesh* mesh, const asl::Matrix4& transform = asl::Matrix4::identity());
-	void paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c);
+	void paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c, bool world = true);
 	asl::Array2<asl::Vec3> getImage();
 	asl::Array2<asl::Vec3> getRangeImage() { return _points; }
 };

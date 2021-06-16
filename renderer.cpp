@@ -39,7 +39,7 @@ SWRenderer::SWRenderer()
 	setSize(800, 600);
 	_projection = projectionOrtho(-40, 40, -30, 30, 50, 120);
 	_light = Vec3(-0.15f, 0.6f, 1).normalized();
-	_color = Vec3(1, 0, 0.2f);
+	_color = Vec3(0.5f, 0.35f, 0.2f);
 	_ambient = 0.1f;
 	_specular = Vec3(0.8f, 0.8f, 0.8f);
 	_shininess = 12.0f;
@@ -69,22 +69,72 @@ void SWRenderer::clear()
 		}
 }
 
+inline Vertex clip(float z, const Vertex& v1, const Vertex& v2)
+{
+	float k = (fabs(v2.position.z - v1.position.z) < 1e-6f) ? 0.5f : (z - v1.position.z) / (v2.position.z - v1.position.z);
+	Vertex v;
+	v.position = k * v2.position + (1 - k) * v1.position;
+	v.normal = k * v2.normal + (1 - k) * v1.normal;
+	v.uv = k * v2.uv + (1 - k) * v1.uv;
+	return v;
+}
 
-void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v2)
+void SWRenderer::clipTriangle(float z, Vertex v[3])
+{
+	while (v[0].position.z < v[1].position.z || v[0].position.z < v[2].position.z)
+	{
+		swap(v[0], v[1]);
+		swap(v[0], v[2]);
+	}
+
+	if (v[1].position.z > z)
+	{
+		Vertex v02 = clip(z, v[0], v[2]);
+		Vertex v12 = clip(z, v[1], v[2]);
+		paintTriangle(v02, v12, v[2], false);
+	}
+	else if (v[2].position.z > z)
+	{
+		Vertex v01 = clip(z, v[0], v[1]);
+		Vertex v12 = clip(z, v[1], v[2]);
+		paintTriangle(v01, v[1], v12, false);
+	}
+	else
+	{
+		Vertex v01 = clip(z, v[0], v[1]);
+		Vertex v02 = clip(z, v[0], v[2]);
+		paintTriangle(v01, v[1], v[2], false);
+		paintTriangle(v01, v[2], v02, false);
+	}
+}
+
+
+
+void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, bool world)
 {
 	Vertex vertices[3] = {v0, v1, v2};
 	Vec4 cverts[3];
 	Vec3 ndc[3];
+	if(world)
+		for (int i = 0; i < 3; i++)
+		{
+			vertices[i].position = _modelview * vertices[i].position;
+			vertices[i].normal = _normalmat * vertices[i].normal;
+		}
 	for (int i = 0; i < 3; i++)
 	{
-		vertices[i].position = _modelview * vertices[i].position;
-		vertices[i].normal = _normalmat * vertices[i].normal;
 		cverts[i] = _projection * asl::Vec4(vertices[i].position, 1.0f);
 		ndc[i] = cverts[i].h2c();
 	}
 
-	if(ndc[0].z < -1 || ndc[1].z < -1 || ndc[2].z < -1) // near clip (should clip into 0, 1 or 2 triangles)
+	if (ndc[0].z < -1 || ndc[1].z < -1 || ndc[2].z < -1) // near clip (should clip into 0, 1 or 2 triangles)
+	{
+		if (ndc[0].z < -1 && ndc[1].z < -1 && ndc[2].z < -1) // all clipped
+			return;
+		float znear = (-_projection(3, 3) - _projection(2, 3)) / (_projection(2, 2) + _projection(3, 2)) - 1.0f;
+		clipTriangle(znear, vertices);
 		return;
+	}
 	
 	for(int i = 0; i < 3; i++) // pixel coords
 	{
