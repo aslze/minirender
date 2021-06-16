@@ -81,6 +81,9 @@ inline Vertex clip(float z, const Vertex& v1, const Vertex& v2)
 
 void SWRenderer::clipTriangle(float z, Vertex v[3])
 {
+	if (v[0].position.z > z && v[1].position.z > z && v[2].position.z > z)
+		return;
+
 	while (v[0].position.z < v[1].position.z || v[0].position.z < v[2].position.z)
 	{
 		swap(v[0], v[1]);
@@ -107,8 +110,6 @@ void SWRenderer::clipTriangle(float z, Vertex v[3])
 		paintTriangle(v01, v[2], v02, false);
 	}
 }
-
-
 
 void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, bool world)
 {
