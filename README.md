@@ -14,10 +14,10 @@ But the only supplied mesh reader is for STL, and there is no normal recomputati
 * Rasterization interpolates vertex positions and normals (can create smooth shading)
 * Ability to save images in PPM format (very simple and not needing 3rd party libraries)
 * No triangle clipping at near or far planes (they are fully removed if they cross the z-near plane)
+* Triangle clipping at the near plane
 
 ## Possible future features
 
-* Clipping, at least at the near plane
 * Configurable materials
 * Textures
 * Additional loader(s) (possibly OBJ, maybe PLY)
