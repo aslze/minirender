@@ -14,11 +14,12 @@ But the only supplied mesh reader is for STL, and there is no normal recomputati
 * Rasterization interpolates vertex positions and normals (can create smooth shading)
 * Ability to save images in PPM format (very simple and not needing 3rd party libraries)
 * Triangle clipping at the near plane
+* Textures
+* STL and OBJ loaders (only triangles now)
 
 ## Possible future features
 
 * Configurable materials
-* Textures
-* Additional loader(s) (possibly OBJ, maybe PLY)
+* Additional loader(s) (maybe PLY)
 * A hierarchical scene description with meshes and transforms
 * Normals computation and polygon triangularization
