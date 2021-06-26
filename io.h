@@ -8,6 +8,8 @@
 TriMesh* loadSTL(const asl::String& filename);
 void saveSTL(TriMesh* mesh, const asl::String& name);
 
+TriMesh* loadOBJ(const asl::String& filename);
+
 void savePPM(const asl::Array2<asl::Vec3>& image, const asl::String& filename);
 asl::Array2<asl::Vec3> loadPPM(const asl::String& filename);
 

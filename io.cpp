@@ -130,6 +130,54 @@ void saveSTL(TriMesh* mesh, const String& name)
 	}
 }
 
+// Still only supports OBJs with normals, and with only triangles
+
+TriMesh* loadOBJ(const asl::String& filename)
+{
+	TextFile file(filename, File::READ);
+	if (!file)
+		return NULL;
+
+	TriMesh* mesh = new TriMesh();
+
+	asl::Array<String> indices;
+	
+	while (!file.end())
+	{
+		String line = file.readLine();
+		Array<String> parts = line.split();
+		if (parts.length() == 0)
+			continue;
+		if (parts[0] == 'v')
+		{
+			mesh->vertices << Vec3(parts[1], parts[2], parts[3]);
+		}
+		else if (parts[0] == "vn")
+		{
+			mesh->normals << Vec3(parts[1], parts[2], parts[3]);
+		}
+		else if (parts[0] == "vt")
+		{
+			mesh->texcoords << Vec2(parts[1], 1.0f - (float)parts[2]);
+		}
+		else if (parts[0] == 'f')
+		{
+			for (int i = 1; i < parts.length(); i++)
+			{
+				parts[i].split('/', indices);
+				mesh->indices << (int)indices[0] - 1;
+				if (indices.length() > 1)
+					mesh->texcoordsI << (int)indices[1] - 1;
+				if(indices.length() > 2)
+					mesh->normalsI << (int)indices[2] - 1;
+			}
+		}
+	}
+
+	return mesh;
+}
+
+
 
 void savePPM(const asl::Array2<asl::Vec3>& image, const asl::String& filename)
 {
@@ -139,7 +187,7 @@ void savePPM(const asl::Array2<asl::Vec3>& image, const asl::String& filename)
 	file << header;
 	Array<byte> data(image.cols() * 3);
 
-	for (int i = image.rows() - 1; i >= 0; i--)
+	for (int i = 0; i < image.rows(); i++)
 	{
 		for (int j = 0; j < image.cols(); j++)
 		{
@@ -175,7 +223,7 @@ asl::Array2<asl::Vec3> loadPPM(const asl::String& filename)
 
 	Array<byte> data(image.cols() * 3);
 
-	for (int i = image.rows() - 1; i >= 0; i--)
+	for (int i = 0; i < image.rows(); i++)
 	{
 		int n = file.read(data.ptr(), data.length());
 		if (n < data.length())
