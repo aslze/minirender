@@ -208,11 +208,19 @@ asl::Array2<asl::Vec3> loadPPM(const asl::String& filename)
 		return image;
 	String header;
 	int nl = 0;
+	bool comment = false;
 	do {
 		char c = file.read<char>();
 		if (c == '\n')
-			nl++;
-		header << c;
+		{
+			if(!comment)
+				nl++;
+			comment = false;
+		}
+		else if (c == '#')
+			comment = true;
+		if(!comment)
+			header << c;
 	} while (nl < 3 && !file.end());
 
 	Array<String> parts = header.split();
