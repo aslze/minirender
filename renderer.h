@@ -24,13 +24,13 @@ class SWRenderer
 	asl::Vec3 _specular;
 	float _ambient;
 	float _shininess;
-	TriMesh* _object;
+	Scene* _scene;
 	void clipTriangle(float z, Vertex v[3]);
 public:
 	SWRenderer();
 	void setSize(int w, int h);
 	float aspect() const { return (float)_image.cols() / _image.rows(); }
-	void setScene(TriMesh* part);
+	void setScene(Scene* scene);
 	void setProjection(const asl::Matrix4& m) { _projection = m; }
 	void setView(const asl::Matrix4& m) { _view = m; }
 	void setLight(const asl::Vec3& v) { _lightdir = v; }

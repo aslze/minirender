@@ -43,6 +43,7 @@ SWRenderer::SWRenderer()
 	_ambient = 0.1f;
 	_specular = Vec3(0.6f, 0.6f, 0.6f);
 	_shininess = 15.0f;
+	_scene = nullptr;
 }
 
 void SWRenderer::setSize(int w, int h)
@@ -53,9 +54,9 @@ void SWRenderer::setSize(int w, int h)
 	clear();
 }
 
-void SWRenderer::setScene(TriMesh* part)
+void SWRenderer::setScene(Scene* scene)
 {
-	_object = part;
+	_scene = scene;
 }
 
 void SWRenderer::clear()
@@ -221,7 +222,13 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 void SWRenderer::render()
 {
 	clear();
-	paintMesh(_object, Matrix4::identity());
+	for (auto item : _scene->children)
+	{
+		if (auto mesh = dynamic_cast<TriMesh*>(item))
+		{
+			paintMesh(mesh, mesh->transform);
+		}
+	}
 }
 
 void SWRenderer::paintMesh(TriMesh* mesh, const Matrix4& transform)

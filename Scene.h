@@ -5,6 +5,7 @@
 #include <asl/Vec2.h>
 #include <asl/Matrix4.h>
 #include <asl/Array.h>
+#include <asl/Array2.h>
 #include <asl/String.h>
 
 struct Vertex
@@ -23,6 +24,8 @@ struct Material
 {
 	asl::Vec3 diffuse, specular, emissive;
 	float shininess, opacity;
+	asl::Array2<asl::Vec3> texture;
+	asl::String textureName;
 	Material();
 };
 
@@ -30,6 +33,7 @@ struct SceneNode
 {
 	bool visible;
 	asl::Matrix4 transform;
+	asl::Array<SceneNode*> children;
 	SceneNode();
 	virtual ~SceneNode() {}
 };
@@ -52,5 +56,10 @@ struct TriMesh : public Shape
 	TriMesh();
 };
 
+struct Scene : public SceneNode
+{
+	float ambientLight;
+	asl::Vec3 light;
+};
 
 #endif
