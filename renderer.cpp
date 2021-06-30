@@ -25,7 +25,13 @@ Matrix4 projectionPerspective(float l, float r, float b, float t, float n, float
 Matrix4 projectionFrustum(float fov, float aspect, float n, float f)
 {
 	float t = tan(fov / 2);
-	return projectionPerspective(-n*t*aspect, n*t * aspect, -n * t, n * t, n, f);
+	return projectionPerspective(-n * t * aspect, n * t * aspect, -n * t, n * t, n, f);
+}
+
+Matrix4 projectionFrustumH(float fov, float aspect, float n, float f)
+{
+	float t = tan(fov / 2);
+	return projectionPerspective(-n * t, n * t, -n * t / aspect, n * t / aspect, n, f);
 }
 
 Matrix4 projectionOrtho(float fov, float aspect, float n, float f)
@@ -229,6 +235,11 @@ void SWRenderer::render()
 			paintMesh(mesh, mesh->transform);
 		}
 	}
+
+	for (int i = 0; i < _depth.rows(); i++)
+		for (int j = 0; j < _depth.cols(); j++)
+			if (_depth(i, j) > 1.0f)
+				_points(i, j) = Vec3(0, 0, 0);
 }
 
 void SWRenderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
@@ -246,10 +257,15 @@ void SWRenderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 		Vec3 na = mesh->normals[mesh->normalsI[i]];
 		Vec3 nb = mesh->normals[mesh->normalsI[i+1]];
 		Vec3 nc = mesh->normals[mesh->normalsI[i+2]];
-		Vec2 ta = mesh->texcoords[mesh->texcoordsI[i]];
-		Vec2 tb = mesh->texcoords[mesh->texcoordsI[i + 1]];
-		Vec2 tc = mesh->texcoords[mesh->texcoordsI[i + 2]];
-		paintTriangle(Vertex(a, na, ta), Vertex(b, nb, tb), Vertex(c, nc, tc));
+		if (mesh->texcoords.length() > 0)
+		{
+			Vec2 ta = mesh->texcoords[mesh->texcoordsI[i]];
+			Vec2 tb = mesh->texcoords[mesh->texcoordsI[i + 1]];
+			Vec2 tc = mesh->texcoords[mesh->texcoordsI[i + 2]];
+			paintTriangle(Vertex(a, na, ta), Vertex(b, nb, tb), Vertex(c, nc, tc));
+		}
+		else
+			paintTriangle(Vertex(a, na), Vertex(b, nb), Vertex(c, nc));
 	}
 }
 
