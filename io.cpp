@@ -248,3 +248,16 @@ asl::Array2<asl::Vec3> loadPPM(const asl::String& filename)
 	return image;
 }
 
+void saveXYZ(const asl::Array2<asl::Vec3>& points, const asl::String& filename)
+{
+	TextFile file(filename, File::WRITE);
+
+	for (int i = 0; i < points.rows(); i++)
+		for (int j = 0; j < points.cols(); j++)
+		{
+			Vec3 p = points(i, j);
+			if(p.z < -1e-5f)
+				file.printf("%f %f %f\n", p.x, p.y, p.z);
+		}
+}
+
