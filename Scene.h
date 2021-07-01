@@ -20,6 +20,8 @@ struct Vertex
 	Vertex(asl::Vec3& p, asl::Vec3& n, asl::Vec2& t): position(p), normal(n), uv(t) {}
 };
 
+struct TriMesh;
+
 struct Material
 {
 	asl::Vec3 diffuse, specular, emissive;
@@ -29,6 +31,14 @@ struct Material
 	Material();
 };
 
+struct Renderable
+{
+	TriMesh* mesh;
+	asl::Matrix4 transform;
+	Renderable() {}
+	Renderable(TriMesh* mesh, const asl::Matrix4& transform) : mesh(mesh), transform(transform) {}
+};
+
 struct SceneNode
 {
 	bool visible;
@@ -36,6 +46,7 @@ struct SceneNode
 	asl::Array<SceneNode*> children;
 	SceneNode();
 	virtual ~SceneNode() {}
+	virtual void collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform);
 };
 
 struct Shape : public SceneNode
@@ -52,6 +63,8 @@ struct TriMesh : public Shape
 	asl::Array<int> indices;
 	asl::Array<int> normalsI;
 	asl::Array<int> texcoordsI;
+
+	virtual void collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform);
 
 	TriMesh();
 };

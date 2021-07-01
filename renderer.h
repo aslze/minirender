@@ -10,6 +10,7 @@ asl::Matrix4 projectionFrustum(float fov, float aspect, float n, float f);
 asl::Matrix4 projectionFrustumH(float fov, float aspect, float n, float f);
 asl::Matrix4 projectionOrtho(float fov, float aspect, float n, float f);
 
+
 class SWRenderer
 {
 	asl::Array2<asl::Vec3> _image;
@@ -26,6 +27,7 @@ class SWRenderer
 	float _ambient;
 	float _shininess;
 	Scene* _scene;
+	asl::Array<Renderable> _renderables;
 	void clipTriangle(float z, Vertex v[3]);
 public:
 	SWRenderer();

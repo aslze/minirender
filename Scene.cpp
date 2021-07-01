@@ -11,6 +11,23 @@ SceneNode::SceneNode()
 	transform = Matrix4::identity();
 }
 
+void SceneNode::collectShapes(Array<Renderable>& list, const asl::Matrix4& xform)
+{
+	auto tr = transform * xform;
+	for (auto& node : children)
+	{
+		node->collectShapes(list, tr);
+	}
+}
+
+void TriMesh::collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform)
+{
+	auto tr = transform * xform;
+	list << Renderable(this, tr);
+	for (auto& node : children)
+		node->collectShapes(list, tr);
+}
+
 TriMesh::TriMesh()
 {
 	material = NULL;

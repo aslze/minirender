@@ -208,7 +208,7 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 					k1 *= z * iz[1];
 					k2 *= z * iz[2];
 				}
-				Vec3 normal = k0 * vertices[0].normal + k1 * vertices[1].normal + k2 * vertices[2].normal;
+				Vec3 normal = (k0 * vertices[0].normal + k1 * vertices[1].normal + k2 * vertices[2].normal).normalized();
 				Vec3 position = k0 * vertices[0].position + k1 * vertices[1].position + k2 * vertices[2].position;
 				if (_texture.rows() > 0)
 				{
@@ -217,7 +217,7 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 				}
 				Vec3 viewDir = -position.normalized();
 				float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _shininess);
-				Vec3 value = (max(0.0f, normal.normalized() * _lightdir) + _ambient) * color + specular * _specular;
+				Vec3 value = (max(0.0f, normal * _lightdir) + _ambient) * color + specular * _specular;
 				_image(y, x) = value;
 				_points(y, x) = position;
 			}
@@ -228,12 +228,12 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 void SWRenderer::render()
 {
 	clear();
-	for (auto item : _scene->children)
+	_renderables.clear();
+	_scene->collectShapes(_renderables, Matrix4::identity());
+
+	for (auto& item : _renderables)
 	{
-		if (auto mesh = dynamic_cast<TriMesh*>(item))
-		{
-			paintMesh(mesh, mesh->transform);
-		}
+		paintMesh(item.mesh, item.transform);
 	}
 
 	for (int i = 0; i < _depth.rows(); i++)
