@@ -45,10 +45,11 @@ SWRenderer::SWRenderer()
 	setSize(800, 600);
 	_projection = projectionOrtho(-40, 40, -30, 30, 50, 120);
 	_lightdir = Vec3(-0.15f, 0.6f, 1).normalized();
-	_color = Vec3(0.5f, 0.35f, 0.2f);
 	_ambient = 0.1f;
-	_specular = Vec3(0.6f, 0.6f, 0.6f);
-	_shininess = 15.0f;
+	_material = new Material();
+	_material->diffuse = Vec3(0.5f, 0.35f, 0.2f);
+	_material->specular = Vec3(0.6f, 0.6f, 0.6f);
+	_material->shininess = 15.0f;
 	_scene = nullptr;
 }
 
@@ -180,12 +181,13 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 
 	bool persp = _projection(3, 3) == 0;
 
+	Vec3 color = _material->diffuse;
+
 	for(float y = floor(pmin.y); y <= pmax.y; y++)
 	{
 		Vec2 pt(floor(pmin.x), y);
 		float e1 = n1 * (pt - p[2]);
 		float e2 = n2 * (pt - p[0]);
-		Vec3 color = _color;
 		for(float x = floor(pmin.x); x <= pmax.x; x++, e1 += n1.x, e2 += n2.x)
 		{
 			if(e1 < 0 || e2 < 0 || 1 - e1 - e2 < 0)
@@ -210,14 +212,14 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 				}
 				Vec3 normal = (k0 * vertices[0].normal + k1 * vertices[1].normal + k2 * vertices[2].normal).normalized();
 				Vec3 position = k0 * vertices[0].position + k1 * vertices[1].position + k2 * vertices[2].position;
-				if (_texture.rows() > 0)
+				if (_material->texture.rows() > 0)
 				{
 					Vec2 uv = k0 * vertices[0].uv + k1 * vertices[1].uv + k2 * vertices[2].uv;
-					color = _texture(fract(uv.y) * _texture.rows(), fract(uv.x) * _texture.cols());
+					color = _material->texture(fract(uv.y) * _material->texture.rows(), fract(uv.x) * _material->texture.cols());
 				}
 				Vec3 viewDir = -position.normalized();
-				float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _shininess);
-				Vec3 value = (max(0.0f, normal * _lightdir) + _ambient) * color + specular * _specular;
+				float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _material->shininess);
+				Vec3 value = (max(0.0f, normal * _lightdir) + _ambient) * color + specular * _material->specular;
 				_image(y, x) = value;
 				_points(y, x) = position;
 			}

@@ -16,17 +16,14 @@ class SWRenderer
 	asl::Array2<asl::Vec3> _image;
 	asl::Array2<float> _depth;
 	asl::Array2<asl::Vec3> _points;
-	asl::Array2<asl::Vec3> _texture;
 	asl::Matrix4 _view;
 	asl::Matrix4 _projection;
 	asl::Matrix4 _modelview;
 	asl::Matrix4 _normalmat;
 	asl::Vec3 _lightdir;
-	asl::Vec3 _color;
-	asl::Vec3 _specular;
 	float _ambient;
-	float _shininess;
 	Scene* _scene;
+	Material* _material;
 	asl::Array<Renderable> _renderables;
 	void clipTriangle(float z, Vertex v[3]);
 public:
@@ -37,7 +34,7 @@ public:
 	void setProjection(const asl::Matrix4& m) { _projection = m; }
 	void setView(const asl::Matrix4& m) { _view = m; }
 	void setLight(const asl::Vec3& v) { _lightdir = v; }
-	void setTexture(const asl::Array2<asl::Vec3>& image) { _texture = image; }
+	void setMaterial(Material* material) { _material = material; }
 	void clear();
 	void render();
 	void paintMesh(TriMesh* mesh, const asl::Matrix4& transform = asl::Matrix4::identity());
