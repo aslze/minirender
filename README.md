@@ -15,11 +15,11 @@ But the only supplied mesh reader is for STL, and there is no normal recomputati
 * Ability to save images in PPM format (very simple and not needing 3rd party libraries)
 * Triangle clipping at the near plane
 * Textures
-* STL and OBJ loaders (only triangles now)
+* STL and (partial) OBJ loaders (only triangles now)
+* Simple hierarchical scene with meshes and transforms
 
 ## Possible future features
 
-* Configurable materials
-* Additional loader(s) (maybe PLY)
-* A hierarchical scene description with meshes and transforms
+* Additional loader(s) (OBJ+MTL, maybe PLY)
 * Normals computation and polygon triangularization
+
