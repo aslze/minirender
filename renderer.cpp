@@ -47,9 +47,9 @@ SWRenderer::SWRenderer()
 	_lightdir = Vec3(-0.15f, 0.6f, 1).normalized();
 	_ambient = 0.1f;
 	_material = new Material();
-	_material->diffuse = Vec3(0.5f, 0.35f, 0.2f);
+	/*_material->diffuse = Vec3(0.5f, 0.35f, 0.2f);
 	_material->specular = Vec3(0.6f, 0.6f, 0.6f);
-	_material->shininess = 15.0f;
+	_material->shininess = 15.0f;*/
 	_scene = nullptr;
 }
 
@@ -198,7 +198,9 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 	
 			float z = k0 * zz[0] + k1 * zz[1] + k2 * zz[2];
 
-			auto& pixdepth = _depth(y, x);
+			int i = int(y), j = int(x);
+
+			auto& pixdepth = _depth(i, j);
 			if (z < pixdepth)
 			{
 				pixdepth = z;
@@ -220,8 +222,8 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 				Vec3 viewDir = -position.normalized();
 				float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _material->shininess);
 				Vec3 value = (max(0.0f, normal * _lightdir) + _ambient) * color + specular * _material->specular;
-				_image(y, x) = value;
-				_points(y, x) = position;
+				_image(i, j) = value;
+				_points(i, j) = position;
 			}
 		}
 	}
@@ -246,6 +248,8 @@ void SWRenderer::render()
 
 void SWRenderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 {
+	if (mesh->material)
+		_material = mesh->material;
 	_modelview = _view * transform;
 	_normalmat = _modelview.inverse().t();
 	for (int i = 0; i < mesh->indices.length(); i += 3)
