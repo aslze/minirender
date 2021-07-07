@@ -1,5 +1,7 @@
 #include <asl/TextFile.h>
 #include <asl/StreamBuffer.h>
+#include <asl/Map.h>
+#include <asl/Path.h>
 #include "io.h"
 
 using namespace asl;
@@ -64,8 +66,12 @@ TriMesh* loadSTLb(const String& filename)
 	if (file.read(s, 80) != 80)
 		return NULL;
 
-	TriMesh* obj = new TriMesh();
 	int nf = file.read<int>();
+
+	if (nf > 100000000)
+		return NULL;
+
+	TriMesh* obj = new TriMesh();
 
 	Array<byte> data(3 * sizeof(float) + 3 * 3 * sizeof(float) + 2);
 
@@ -132,7 +138,7 @@ void saveSTL(TriMesh* mesh, const String& name)
 
 // Still only supports OBJs with normals, and with only triangles
 
-TriMesh* loadOBJ(const asl::String& filename)
+SceneNode* loadOBJ(const asl::String& filename)
 {
 	TextFile file(filename, File::READ);
 	if (!file)
@@ -140,25 +146,45 @@ TriMesh* loadOBJ(const asl::String& filename)
 
 	TriMesh* mesh = new TriMesh();
 
+	Dic<TriMesh*> meshes;
+	Dic<Material*> materials;
+
+	materials[""] = new Material;
+	meshes[""] = mesh;
+
+	// one mesh per material
+	// all meshes will share vertices, normals and texcoords
+
+	Array<Vec3> vertices;
+	Array<Vec3> normals;
+	Array<Vec2> texcoords;
+
+	mesh->vertices = vertices;
+	mesh->normals = normals;
+	mesh->texcoords = texcoords;
+	mesh->material = materials[""];
+
 	asl::Array<String> indices;
 	
 	while (!file.end())
 	{
 		String line = file.readLine();
+		if (line.startsWith('#'))
+			continue;
 		Array<String> parts = line.split();
 		if (parts.length() == 0)
 			continue;
 		if (parts[0] == 'v')
 		{
-			mesh->vertices << Vec3(parts[1], parts[2], parts[3]);
+			vertices << Vec3(parts[1], parts[2], parts[3]);
 		}
 		else if (parts[0] == "vn")
 		{
-			mesh->normals << Vec3(parts[1], parts[2], parts[3]);
+			normals << Vec3(parts[1], parts[2], parts[3]);
 		}
 		else if (parts[0] == "vt")
 		{
-			mesh->texcoords << Vec2(parts[1], 1.0f - (float)parts[2]);
+			texcoords << Vec2(parts[1], 1.0f - (float)parts[2]);
 		}
 		else if (parts[0] == 'f')
 		{
@@ -172,9 +198,68 @@ TriMesh* loadOBJ(const asl::String& filename)
 					mesh->normalsI << (int)indices[2] - 1;
 			}
 		}
+		else if (parts[0] == "usemtl")
+		{
+			String& name = parts[1];
+			if (!meshes.has(name))
+			{
+				mesh = new TriMesh;
+				mesh->vertices = vertices;
+				mesh->normals = normals;
+				mesh->texcoords = texcoords;
+				mesh->material = materials.get(name, materials[""]);
+				meshes[name] = mesh;
+			}
+			mesh = meshes[name];
+		}
+		else if (parts[0] == "mtllib")
+		{
+			TextFile matfile(Path(filename).directory() + "/" + parts[1], File::READ);
+			Material* mat = materials[""];
+			for (auto line : matfile.lines())
+			{
+				Array<String> parts = line.split();
+				if (parts.length() == 0)
+					continue;
+
+				if (parts[0] == "newmtl")
+				{
+					mat = new Material;
+					materials[parts[1]] = mat;
+				}
+				else if (parts[0] == "Kd")
+					mat->diffuse = Vec3(parts[1], parts[2], parts[3]);
+				else if (parts[0] == "Ks")
+					mat->specular = Vec3(parts[1], parts[2], parts[3]);
+				else if (parts[0] == "Ns")
+				{
+					mat->shininess = parts[1];
+					if (mat->shininess < 0.0001f)
+						mat->shininess = 10;
+				}
+				else if (parts[0] == "d")
+					mat->opacity = parts[1];
+				else if (parts[0] == "map_Kd")
+					mat->textureName = parts[1];
+			}
+		}
 	}
 
-	return mesh;
+	for (auto mat : materials)
+	{
+		if (mat.value->textureName)
+		{
+			mat.value->texture = loadPPM(Path(filename).directory() + "/" + mat.value->textureName);
+		}
+	}
+
+	SceneNode* node = new SceneNode;
+	for (auto mesh : meshes)
+	{
+		node->children << mesh.value;
+	}
+
+	return node;
 }
 
 
