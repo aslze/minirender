@@ -47,9 +47,7 @@ SWRenderer::SWRenderer()
 	_lightdir = Vec3(-0.15f, 0.6f, 1).normalized();
 	_ambient = 0.1f;
 	_material = new Material();
-	/*_material->diffuse = Vec3(0.5f, 0.35f, 0.2f);
-	_material->specular = Vec3(0.6f, 0.6f, 0.6f);
-	_material->shininess = 15.0f;*/
+	//_material->shininess = 15.0f;
 	_scene = nullptr;
 }
 
@@ -121,28 +119,31 @@ void SWRenderer::clipTriangle(float z, Vertex v[3])
 
 void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, bool world)
 {
-	Vertex vertices[3] = {v0, v1, v2};
+	Vec3 vertices[3] = { v0.position, v1.position, v2.position };
+	Vec3 normals[3] = { v0.normal, v1.normal, v2.normal };
+	Vec2 texcoords[3] = { v0.uv, v1.uv, v2.uv };
 	Vec4 cverts[3];
 	Vec3 ndc[3];
 	if(world)
 		for (int i = 0; i < 3; i++)
 		{
-			vertices[i].position = _modelview * vertices[i].position;
-			vertices[i].normal = _normalmat * vertices[i].normal;
+			vertices[i] = _modelview * vertices[i];
+			normals[i] = _normalmat * normals[i];
 		}
 
-	//float znear = (-_projection(3, 3) - _projection(2, 3)) / (_projection(2, 2) + _projection(3, 2)) - 1.0f;
-	if(world && (vertices[0].position.z > _znear || vertices[1].position.z > _znear || vertices[2].position.z > _znear))
+	if(world && (vertices[0].z > _znear || vertices[1].z > _znear || vertices[2].z > _znear))
 	{
-		if (vertices[0].position.z > _znear && vertices[1].position.z > _znear && vertices[2].position.z > _znear)
+		if (vertices[0].z > _znear && vertices[1].z > _znear && vertices[2].z > _znear)
 			return;
-		clipTriangle(_znear, vertices);
+		
+		Vertex verts[3] = { Vertex(vertices[0], normals[0], texcoords[0]), Vertex(vertices[1], normals[1], texcoords[1]), Vertex(vertices[2], normals[2], texcoords[2]) };
+		clipTriangle(_znear, verts);
 		return;
 	}
 	
 	for (int i = 0; i < 3; i++)
 	{
-		cverts[i] = _projection * asl::Vec4(vertices[i].position, 1.0f);
+		cverts[i] = _projection * asl::Vec4(vertices[i], 1.0f);
 		ndc[i] = cverts[i].h2c();
 	}
 
@@ -178,11 +179,13 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 	pmax.y = (float)clamp((int)pmax.y, 0, _image.rows()-1);
 
 	float zz[] = { ndc[0].z, ndc[1].z, ndc[2].z };
-	float iz[] = { 1 / -vertices[0].position.z, 1 / -vertices[1].position.z, 1 / -vertices[2].position.z };
+	float iz[] = { 1 / -vertices[0].z, 1 / -vertices[1].z, 1 / -vertices[2].z };
 
 	bool persp = _projection(3, 3) == 0;
 
 	Vec3 color = _material->diffuse;
+
+	float k[3];
 
 	for(float y = floor(pmin.y); y <= pmax.y; y++)
 	{
@@ -193,11 +196,11 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 		{
 			if(e1 < 0 || e2 < 0 || 1 - e1 - e2 < 0)
 				continue;
-			float k1 = e1;
-			float k2 = e2;
-			float k0 = 1 - k1 - k2;
+			k[1] = e1;
+			k[2] = e2;
+			k[0] = 1 - k[1] - k[2];
 	
-			float z = k0 * zz[0] + k1 * zz[1] + k2 * zz[2];
+			float z = k[0] * zz[0] + k[1] * zz[1] + k[2] * zz[2];
 
 			int i = int(y), j = int(x);
 
@@ -205,24 +208,28 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 			if (z < pixdepth)
 			{
 				pixdepth = z;
-				float k0 = 1 - k1 - k2;
+				k[0] = 1 - k[1] - k[2];
 				if (persp)
 				{
-					z = 1 / (k0 * iz[0] + k1 * iz[1] + k2 * iz[2]);
-					k0 *= z * iz[0];
-					k1 *= z * iz[1];
-					k2 *= z * iz[2];
+					z = 1 / (k[0] * iz[0] + k[1] * iz[1] + k[2] * iz[2]);
+					k[0] *= z * iz[0];
+					k[1] *= z * iz[1];
+					k[2] *= z * iz[2];
 				}
-				Vec3 normal = (k0 * vertices[0].normal + k1 * vertices[1].normal + k2 * vertices[2].normal).normalized();
-				Vec3 position = k0 * vertices[0].position + k1 * vertices[1].position + k2 * vertices[2].position;
+				Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
+				Vec3 position = k[0] * vertices[0] + k[1] * vertices[1] + k[2] * vertices[2];
 				if (_material->texture.rows() > 0)
 				{
-					Vec2 uv = k0 * vertices[0].uv + k1 * vertices[1].uv + k2 * vertices[2].uv;
+					Vec2 uv = k[0] * texcoords[0] + k[1] * texcoords[1] + k[2] * texcoords[2];
 					color = _material->texture(fract(uv.y) * _material->texture.rows(), fract(uv.x) * _material->texture.cols());
 				}
 				Vec3 viewDir = -position.normalized();
-				float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _material->shininess);
-				Vec3 value = (max(0.0f, normal * _lightdir) + _ambient) * color + specular * _material->specular;
+				Vec3 value = (max(0.0f, normal * _lightdir) + _ambient) * color;
+				if (_material->shininess != 0)
+				{
+					float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _material->shininess);
+					value += specular * _material->specular;
+				}
 				_image(i, j) = value;
 				_points(i, j) = position;
 			}
