@@ -5,6 +5,8 @@
 #include <asl/Array2.h>
 #include <asl/Vec3.h>
 
+SceneNode* loadMesh(const asl::String& filename);
+
 TriMesh* loadSTL(const asl::String& filename);
 void saveSTL(TriMesh* mesh, const asl::String& name);
 

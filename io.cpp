@@ -105,6 +105,22 @@ TriMesh* loadSTLb(const String& filename)
 	return obj;
 }
 
+SceneNode* loadMesh(const asl::String& filename)
+{
+	if (Path(filename).hasExtension("stl"))
+	{
+		TriMesh* mesh = loadSTL(filename);
+		SceneNode* node = new SceneNode;
+		node->children << mesh;
+		return node;
+	}
+	else if (Path(filename).hasExtension("obj"))
+	{
+		return loadOBJ(filename);
+	}
+	return new SceneNode;
+}
+
 TriMesh* loadSTL(const asl::String& filename)
 {
 	Array<byte> bytes = asl::File(filename).firstBytes(5);
