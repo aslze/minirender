@@ -130,21 +130,22 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 			vertices[i].position = _modelview * vertices[i].position;
 			vertices[i].normal = _normalmat * vertices[i].normal;
 		}
+
+	//float znear = (-_projection(3, 3) - _projection(2, 3)) / (_projection(2, 2) + _projection(3, 2)) - 1.0f;
+	if(world && (vertices[0].position.z > _znear || vertices[1].position.z > _znear || vertices[2].position.z > _znear))
+	{
+		if (vertices[0].position.z > _znear && vertices[1].position.z > _znear && vertices[2].position.z > _znear)
+			return;
+		clipTriangle(_znear, vertices);
+		return;
+	}
+	
 	for (int i = 0; i < 3; i++)
 	{
 		cverts[i] = _projection * asl::Vec4(vertices[i].position, 1.0f);
 		ndc[i] = cverts[i].h2c();
 	}
 
-	if (ndc[0].z < -1 || ndc[1].z < -1 || ndc[2].z < -1) // near clip (should clip into 0, 1 or 2 triangles)
-	{
-		if (ndc[0].z < -1 && ndc[1].z < -1 && ndc[2].z < -1) // all clipped
-			return;
-		float znear = (-_projection(3, 3) - _projection(2, 3)) / (_projection(2, 2) + _projection(3, 2)) - 1.0f;
-		clipTriangle(znear, vertices);
-		return;
-	}
-	
 	for(int i = 0; i < 3; i++) // pixel coords
 	{
 		ndc[i].x = (1 + ndc[i].x) * _image.cols() / 2;
@@ -234,6 +235,8 @@ void SWRenderer::render()
 	clear();
 	_renderables.clear();
 	_scene->collectShapes(_renderables, Matrix4::identity());
+
+	_znear = (-_projection(3, 3) - _projection(2, 3)) / (_projection(2, 2) + _projection(3, 2)) - 1.0f;
 
 	for (auto& item : _renderables)
 	{

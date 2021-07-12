@@ -22,6 +22,7 @@ class SWRenderer
 	asl::Matrix4 _normalmat;
 	asl::Vec3 _lightdir;
 	float _ambient;
+	float _znear;
 	Scene* _scene;
 	Material* _material;
 	asl::Array<Renderable> _renderables;
