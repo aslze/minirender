@@ -4,22 +4,21 @@
 
 Only requires the [ASL](https://github.com/aslze/asl) library.
 
-Very simple at the moment. It interpolates normals to produce smooth Blinn-Phong diffuse and specular illumination.
-But the only supplied mesh reader is for STL, and there is no normal recomputation, so the triangles will look flat.
+It interpolates normals to produce smooth Blinn-Phong diffuse and specular illumination.
 
 ## Current features
 
 * Rasterization of triangle meshes, using OpenGL-like modelview and projection matrices
-* Blinn-Phong illumination (currently with hardcoded colors and properties)
-* Rasterization interpolates vertex positions and normals (can create smooth shading)
+* Blinn-Phong illumination
+* Rasterization interpolates vertex positions, normals and texture coordinates (can create smooth shading)
 * Ability to save images in PPM format (very simple and not needing 3rd party libraries)
 * Triangle clipping at the near plane
-* Textures
-* STL and (partial) OBJ loaders (only triangles now)
+* Textures (PPM only)
+* STL and (partial) OBJ/MTL loaders (now only triangles and must have normals)
 * Simple hierarchical scene with meshes and transforms
 
 ## Possible future features
 
-* Additional loader(s) (OBJ+MTL, maybe PLY)
+* Additional loader(s) (maybe PLY)
 * Normals computation and polygon triangularization
 
