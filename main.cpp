@@ -1,9 +1,10 @@
-#include "Scene.h"
-#include "renderer.h"
-#include "io.h"
+#include <minirender/Scene.h>
+#include <minirender/renderer.h>
+#include <minirender/io.h>
 #include <asl/CmdArgs.h>
 
 using namespace asl;
+using namespace minirender;
 
 int main(int argc, char* argv[])
 {
@@ -11,7 +12,7 @@ int main(int argc, char* argv[])
 
 	double t1 = now();
 
-	TriMesh* shape = loadSTL(args[0]);
+	auto* shape = loadMesh(args[0]);
 
 	double t2 = now();
 
@@ -20,7 +21,7 @@ int main(int argc, char* argv[])
 	Scene* scene = new Scene();
 	scene->children << shape;
 
-	SWRenderer renderer;
+	Renderer renderer;
 
 	renderer.setProjection(projectionFrustum(0.75f, renderer.aspect(), 40, 1000));
 	renderer.setView(Matrix4::translate(0, 0, -100));

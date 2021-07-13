@@ -1,9 +1,8 @@
-#define DLL_EXPORTS
-
-#include "Scene.h"
+#include "minirender/Scene.h"
 
 using namespace asl;
 
+namespace minirender {
 
 SceneNode::SceneNode()
 {
@@ -33,7 +32,7 @@ TriMesh::TriMesh()
 	material = NULL;
 }
 
-Material::Material():
+Material::Material() :
 	diffuse(0.7f, 0.7f, 0.9f),
 	specular(0.8f, 0.8f, 0.8f),
 	emissive(0, 0, 0),
@@ -41,4 +40,4 @@ Material::Material():
 	opacity(1.0f)
 {}
 
-
+}

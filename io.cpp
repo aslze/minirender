@@ -2,14 +2,16 @@
 #include <asl/StreamBuffer.h>
 #include <asl/Map.h>
 #include <asl/Path.h>
-#include "io.h"
+#include "minirender/io.h"
 
 using namespace asl;
+
+namespace minirender {
 
 TriMesh* loadSTLa(const asl::String& filename)
 {
 	TextFile file(filename, File::READ);
-	if(!file)
+	if (!file)
 		return NULL;
 
 	String tag;
@@ -76,9 +78,9 @@ TriMesh* loadSTLb(const String& filename)
 	Array<byte> data(3 * sizeof(float) + 3 * 3 * sizeof(float) + 2);
 
 	obj->normals.reserve(nf);
-	obj->vertices.reserve(nf*3);
-	obj->indices.reserve(nf*3);
-	obj->normalsI.reserve(nf*3);
+	obj->vertices.reserve(nf * 3);
+	obj->indices.reserve(nf * 3);
+	obj->normalsI.reserve(nf * 3);
 
 	asl::Vec3 v;
 
@@ -124,10 +126,10 @@ SceneNode* loadMesh(const asl::String& filename)
 TriMesh* loadSTL(const asl::String& filename)
 {
 	Array<byte> bytes = asl::File(filename).firstBytes(5);
-	if(bytes.length() < 5)
+	if (bytes.length() < 5)
 		return NULL;
 
-	if(String((char*)bytes.ptr(), 5) == "solid")
+	if (String((char*)bytes.ptr(), 5) == "solid")
 		return loadSTLa(filename);
 	else
 		return loadSTLb(filename);
@@ -137,13 +139,13 @@ void saveSTL(TriMesh* mesh, const String& name)
 {
 	asl::File file(name, asl::File::WRITE);
 	file << String(' ', 80);
-	file << mesh->indices.length()/3;
-	for(int i=0; i < mesh->indices.length(); i+=3)
+	file << mesh->indices.length() / 3;
+	for (int i = 0; i < mesh->indices.length(); i += 3)
 	{
 		Vec3 a = mesh->vertices[mesh->indices[i]],
-		b = mesh->vertices[mesh->indices[i+1]],
-		c = mesh->vertices[mesh->indices[i+2]];
-		Vec3 n = ((c-a) ^ (b-a)).normalized();
+			b = mesh->vertices[mesh->indices[i + 1]],
+			c = mesh->vertices[mesh->indices[i + 2]];
+		Vec3 n = ((c - a) ^ (b - a)).normalized();
 		file << n.x << n.y << n.z;
 		file << a.x << a.y << a.z;
 		file << b.x << b.y << b.z;
@@ -181,7 +183,7 @@ SceneNode* loadOBJ(const asl::String& filename)
 	mesh->material = materials[""];
 
 	asl::Array<String> indices;
-	
+
 	while (!file.end())
 	{
 		String line = file.readLine();
@@ -210,7 +212,7 @@ SceneNode* loadOBJ(const asl::String& filename)
 				mesh->indices << (int)indices[0] - 1;
 				if (indices.length() > 1)
 					mesh->texcoordsI << (int)indices[1] - 1;
-				if(indices.length() > 2)
+				if (indices.length() > 2)
 					mesh->normalsI << (int)indices[2] - 1;
 			}
 		}
@@ -314,13 +316,13 @@ asl::Array2<asl::Vec3> loadPPM(const asl::String& filename)
 		char c = file.read<char>();
 		if (c == '\n')
 		{
-			if(!comment)
+			if (!comment)
 				nl++;
 			comment = false;
 		}
 		else if (c == '#')
 			comment = true;
-		if(!comment)
+		if (!comment)
 			header << c;
 	} while (nl < 3 && !file.end());
 
@@ -357,8 +359,9 @@ void saveXYZ(const asl::Array2<asl::Vec3>& points, const asl::String& filename)
 		for (int j = 0; j < points.cols(); j++)
 		{
 			Vec3 p = points(i, j);
-			if(p.z < -1e-5f)
+			if (p.z < -1e-5f)
 				file.printf("%f %f %f\n", p.x, p.y, p.z);
 		}
 }
 
+}

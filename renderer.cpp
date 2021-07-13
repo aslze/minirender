@@ -1,8 +1,10 @@
 
-#include "renderer.h"
+#include "minirender/renderer.h"
 #include <asl/TextFile.h>
 
 using namespace asl;
+
+namespace minirender {
 
 Matrix4 projectionOrtho(float l, float r, float b, float t, float n, float f)
 {
@@ -36,11 +38,11 @@ Matrix4 projectionFrustumH(float fov, float aspect, float n, float f)
 
 Matrix4 projectionOrtho(float fov, float aspect, float n, float f)
 {
-	return projectionOrtho(-fov*aspect/2, fov*aspect/2, -fov/2, fov/2, n, f);
+	return projectionOrtho(-fov * aspect / 2, fov * aspect / 2, -fov / 2, fov / 2, n, f);
 }
 
 
-SWRenderer::SWRenderer()
+Renderer::Renderer()
 {
 	setSize(800, 600);
 	_projection = projectionOrtho(-40, 40, -30, 30, 50, 120);
@@ -51,7 +53,7 @@ SWRenderer::SWRenderer()
 	_scene = nullptr;
 }
 
-void SWRenderer::setSize(int w, int h)
+void Renderer::setSize(int w, int h)
 {
 	_image.resize(h, w);
 	_depth.resize(h, w);
@@ -59,12 +61,12 @@ void SWRenderer::setSize(int w, int h)
 	clear();
 }
 
-void SWRenderer::setScene(Scene* scene)
+void Renderer::setScene(Scene* scene)
 {
 	_scene = scene;
 }
 
-void SWRenderer::clear()
+void Renderer::clear()
 {
 	for (int i = 0; i < _image.rows(); i++)
 		for (int j = 0; j < _image.cols(); j++)
@@ -85,7 +87,7 @@ inline Vertex clip(float z, const Vertex& v1, const Vertex& v2)
 	return v;
 }
 
-void SWRenderer::clipTriangle(float z, Vertex v[3])
+void Renderer::clipTriangle(float z, Vertex v[3])
 {
 	if (v[0].position.z > z && v[1].position.z > z && v[2].position.z > z)
 		return;
@@ -117,43 +119,43 @@ void SWRenderer::clipTriangle(float z, Vertex v[3])
 	}
 }
 
-void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, bool world)
+void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, bool world)
 {
 	Vec3 vertices[3] = { v0.position, v1.position, v2.position };
 	Vec3 normals[3] = { v0.normal, v1.normal, v2.normal };
 	Vec2 texcoords[3] = { v0.uv, v1.uv, v2.uv };
 	Vec4 cverts[3];
 	Vec3 ndc[3];
-	if(world)
+	if (world)
 		for (int i = 0; i < 3; i++)
 		{
 			vertices[i] = _modelview * vertices[i];
 			normals[i] = _normalmat * normals[i];
 		}
 
-	if(world && (vertices[0].z > _znear || vertices[1].z > _znear || vertices[2].z > _znear))
+	if (world && (vertices[0].z > _znear || vertices[1].z > _znear || vertices[2].z > _znear))
 	{
 		if (vertices[0].z > _znear && vertices[1].z > _znear && vertices[2].z > _znear)
 			return;
-		
+
 		Vertex verts[3] = { Vertex(vertices[0], normals[0], texcoords[0]), Vertex(vertices[1], normals[1], texcoords[1]), Vertex(vertices[2], normals[2], texcoords[2]) };
 		clipTriangle(_znear, verts);
 		return;
 	}
-	
+
 	for (int i = 0; i < 3; i++)
 	{
 		cverts[i] = _projection * asl::Vec4(vertices[i], 1.0f);
 		ndc[i] = cverts[i].h2c();
 	}
 
-	for(int i = 0; i < 3; i++) // pixel coords
+	for (int i = 0; i < 3; i++) // pixel coords
 	{
 		ndc[i].x = (1 + ndc[i].x) * _image.cols() / 2;
 		ndc[i].y = (1 - ndc[i].y) * _image.rows() / 2;
 	}
 
-	Vec2 p[3] = {ndc[0].xy(), ndc[1].xy(), ndc[2].xy()};
+	Vec2 p[3] = { ndc[0].xy(), ndc[1].xy(), ndc[2].xy() };
 
 	Vec2 pmin = min(p[0], p[1], p[2]);
 	Vec2 pmax = max(p[0], p[1], p[2]);
@@ -173,10 +175,10 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 	Vec2 n1 = (p[0] - p[2]).perpend() * i2a;
 	Vec2 n2 = (p[1] - p[0]).perpend() * i2a;
 
-	pmin.x = (float)clamp((int)pmin.x, 0, _image.cols()-1);
-	pmax.x = (float)clamp((int)pmax.x, 0, _image.cols()-1);
-	pmin.y = (float)clamp((int)pmin.y, 0, _image.rows()-1);
-	pmax.y = (float)clamp((int)pmax.y, 0, _image.rows()-1);
+	pmin.x = (float)clamp((int)pmin.x, 0, _image.cols() - 1);
+	pmax.x = (float)clamp((int)pmax.x, 0, _image.cols() - 1);
+	pmin.y = (float)clamp((int)pmin.y, 0, _image.rows() - 1);
+	pmax.y = (float)clamp((int)pmax.y, 0, _image.rows() - 1);
 
 	float zz[] = { ndc[0].z, ndc[1].z, ndc[2].z };
 	float iz[] = { 1 / -vertices[0].z, 1 / -vertices[1].z, 1 / -vertices[2].z };
@@ -187,19 +189,19 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 
 	float k[3];
 
-	for(float y = floor(pmin.y); y <= pmax.y; y++)
+	for (float y = floor(pmin.y); y <= pmax.y; y++)
 	{
 		Vec2 pt(floor(pmin.x), y);
 		float e1 = n1 * (pt - p[2]);
 		float e2 = n2 * (pt - p[0]);
-		for(float x = floor(pmin.x); x <= pmax.x; x++, e1 += n1.x, e2 += n2.x)
+		for (float x = floor(pmin.x); x <= pmax.x; x++, e1 += n1.x, e2 += n2.x)
 		{
-			if(e1 < 0 || e2 < 0 || 1 - e1 - e2 < 0)
+			if (e1 < 0 || e2 < 0 || 1 - e1 - e2 < 0)
 				continue;
 			k[1] = e1;
 			k[2] = e2;
 			k[0] = 1 - k[1] - k[2];
-	
+
 			float z = k[0] * zz[0] + k[1] * zz[1] + k[2] * zz[2];
 
 			int i = int(y), j = int(x);
@@ -208,7 +210,6 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 			if (z < pixdepth)
 			{
 				pixdepth = z;
-				k[0] = 1 - k[1] - k[2];
 				if (persp)
 				{
 					z = 1 / (k[0] * iz[0] + k[1] * iz[1] + k[2] * iz[2]);
@@ -237,7 +238,7 @@ void SWRenderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex&
 	}
 }
 
-void SWRenderer::render()
+void Renderer::render()
 {
 	clear();
 	_renderables.clear();
@@ -256,7 +257,7 @@ void SWRenderer::render()
 				_points(i, j) = Vec3(0, 0, 0);
 }
 
-void SWRenderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
+void Renderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 {
 	if (mesh->material)
 		_material = mesh->material;
@@ -265,14 +266,14 @@ void SWRenderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 	for (int i = 0; i < mesh->indices.length(); i += 3)
 	{
 		int ia = mesh->indices[i];
-		int ib = mesh->indices[i+1];
-		int ic = mesh->indices[i+2];
+		int ib = mesh->indices[i + 1];
+		int ic = mesh->indices[i + 2];
 		Vec3 a = mesh->vertices[ia];
 		Vec3 b = mesh->vertices[ib];
 		Vec3 c = mesh->vertices[ic];
 		Vec3 na = mesh->normals[mesh->normalsI[i]];
-		Vec3 nb = mesh->normals[mesh->normalsI[i+1]];
-		Vec3 nc = mesh->normals[mesh->normalsI[i+2]];
+		Vec3 nb = mesh->normals[mesh->normalsI[i + 1]];
+		Vec3 nc = mesh->normals[mesh->normalsI[i + 2]];
 		if (mesh->texcoords.length() > 0)
 		{
 			Vec2 ta = mesh->texcoords[mesh->texcoordsI[i]];
@@ -285,7 +286,9 @@ void SWRenderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 	}
 }
 
-asl::Array2<asl::Vec3> SWRenderer::getImage()
+asl::Array2<asl::Vec3> Renderer::getImage()
 {
 	return _image;
+}
+
 }

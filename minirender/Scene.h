@@ -8,6 +8,8 @@
 #include <asl/Array2.h>
 #include <asl/String.h>
 
+namespace minirender {
+
 struct Vertex
 {
 	asl::Vec3 position;
@@ -15,9 +17,9 @@ struct Vertex
 	asl::Vec2 uv;
 
 	Vertex() {}
-	Vertex(asl::Vec3& p): position(p), normal(0, 0, 1), uv(0, 0) {}
-	Vertex(asl::Vec3& p, asl::Vec3& n): position(p), normal(n), uv(0, 0) {}
-	Vertex(asl::Vec3& p, asl::Vec3& n, asl::Vec2& t): position(p), normal(n), uv(t) {}
+	Vertex(asl::Vec3& p) : position(p), normal(0, 0, 1), uv(0, 0) {}
+	Vertex(asl::Vec3& p, asl::Vec3& n) : position(p), normal(n), uv(0, 0) {}
+	Vertex(asl::Vec3& p, asl::Vec3& n, asl::Vec2& t) : position(p), normal(n), uv(t) {}
 };
 
 struct TriMesh;
@@ -51,7 +53,7 @@ struct SceneNode
 
 struct Shape : public SceneNode
 {
-    Material* material;
+	Material* material;
 	virtual ~Shape() {}
 };
 
@@ -74,5 +76,7 @@ struct Scene : public SceneNode
 	float ambientLight;
 	asl::Vec3 light;
 };
+
+}
 
 #endif

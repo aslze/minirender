@@ -1,8 +1,10 @@
-#ifndef RENDERER_H
-#define RENDERER_H
+#ifndef MINIRENDER_RENDERER_H
+#define MINIRENDER_RENDERER_H
 
 #include "Scene.h"
 #include <asl/Array2.h>
+
+namespace minirender {
 
 asl::Matrix4 projectionOrtho(float l, float r, float b, float t, float n, float f);
 asl::Matrix4 projectionPerspective(float l, float r, float b, float t, float n, float f);
@@ -11,7 +13,7 @@ asl::Matrix4 projectionFrustumH(float fov, float aspect, float n, float f);
 asl::Matrix4 projectionOrtho(float fov, float aspect, float n, float f);
 
 
-class SWRenderer
+class Renderer
 {
 	asl::Array2<asl::Vec3> _image;
 	asl::Array2<float> _depth;
@@ -28,7 +30,7 @@ class SWRenderer
 	asl::Array<Renderable> _renderables;
 	void clipTriangle(float z, Vertex v[3]);
 public:
-	SWRenderer();
+	Renderer();
 	void setSize(int w, int h);
 	float aspect() const { return (float)_image.cols() / _image.rows(); }
 	void setScene(Scene* scene);
@@ -44,4 +46,5 @@ public:
 	asl::Array2<asl::Vec3> getRangeImage() { return _points; }
 };
 
+}
 #endif
