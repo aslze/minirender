@@ -29,6 +29,8 @@ class Renderer
 	Material* _material;
 	asl::Array<Renderable> _renderables;
 	void clipTriangle(float z, Vertex v[3]);
+	bool _lighting;
+	bool _texturing;
 public:
 	Renderer();
 	void setSize(int w, int h);
@@ -38,6 +40,8 @@ public:
 	void setView(const asl::Matrix4& m) { _view = m; }
 	void setLight(const asl::Vec3& v) { _lightdir = v; }
 	void setMaterial(Material* material) { _material = material; }
+	void setLighting(bool on) { _lighting = on; }
+	void setTexturing(bool on) { _texturing = on; }
 	void clear();
 	void render();
 	void paintMesh(TriMesh* mesh, const asl::Matrix4& transform = asl::Matrix4::identity());

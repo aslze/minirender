@@ -51,6 +51,8 @@ Renderer::Renderer()
 	_material = new Material();
 	//_material->shininess = 15.0f;
 	_scene = nullptr;
+	_lighting = true;
+	_texturing = true;
 }
 
 void Renderer::setSize(int w, int h)
@@ -217,19 +219,27 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 					k[1] *= z * iz[1];
 					k[2] *= z * iz[2];
 				}
-				Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
+
 				Vec3 position = k[0] * vertices[0] + k[1] * vertices[1] + k[2] * vertices[2];
-				if (_material->texture.rows() > 0)
+
+				if (_texturing && _material->texture.rows() > 0)
 				{
 					Vec2 uv = k[0] * texcoords[0] + k[1] * texcoords[1] + k[2] * texcoords[2];
 					color = _material->texture(fract(uv.y) * _material->texture.rows(), fract(uv.x) * _material->texture.cols());
 				}
-				Vec3 viewDir = -position.normalized();
-				Vec3 value = (max(0.0f, normal * _lightdir) + _ambient) * color;
-				if (_material->shininess != 0)
+				
+				Vec3 value = _material->emissive;
+				
+				if (_lighting)
 				{
-					float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _material->shininess);
-					value += specular * _material->specular;
+					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
+					value += (max(0.0f, normal * _lightdir) + _ambient) * color;
+					if (_material->shininess != 0)
+					{
+						Vec3 viewDir = -position.normalized();
+						float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _material->shininess);
+						value += specular * _material->specular;
+					}
 				}
 				_image(i, j) = value;
 				_points(i, j) = position;
