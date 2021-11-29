@@ -225,7 +225,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 				if (_texturing && _material->texture.rows() > 0)
 				{
 					Vec2 uv = k[0] * texcoords[0] + k[1] * texcoords[1] + k[2] * texcoords[2];
-					color = _material->texture(fract(uv.y) * _material->texture.rows(), fract(uv.x) * _material->texture.cols());
+					color = _material->texture(int(fract(uv.y) * _material->texture.rows()), int(fract(uv.x) * _material->texture.cols()));
 				}
 				
 				Vec3 value = _material->emissive;
