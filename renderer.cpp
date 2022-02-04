@@ -182,14 +182,16 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	pmin.y = (float)clamp((int)pmin.y, 0, _image.rows() - 1);
 	pmax.y = (float)clamp((int)pmax.y, 0, _image.rows() - 1);
 
-	float zz[] = { ndc[0].z, ndc[1].z, ndc[2].z };
-	float iz[] = { 1 / -vertices[0].z, 1 / -vertices[1].z, 1 / -vertices[2].z };
+	float zz[4] = { ndc[0].z, ndc[1].z, ndc[2].z, 1 };
+	float iz[4] = { 1 / -vertices[0].z, 1 / -vertices[1].z, 1 / -vertices[2].z, 1 };
 
 	bool persp = _projection(3, 3) == 0;
+	bool hasspecular = _material->shininess != 0;
+	bool hastexture = _texturing && _material->texture.rows() > 0;
 
 	Vec3 color = _material->diffuse;
 
-	float k[3];
+	float k[4] = { 0, 0, 0, 0 };
 
 	for (float y = floor(pmin.y); y <= pmax.y; y++)
 	{
@@ -200,11 +202,11 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 		{
 			if (e1 < 0 || e2 < 0 || 1 - e1 - e2 < 0)
 				continue;
+			k[0] = 1 - e1 - e2;
 			k[1] = e1;
 			k[2] = e2;
-			k[0] = 1 - k[1] - k[2];
 
-			float z = k[0] * zz[0] + k[1] * zz[1] + k[2] * zz[2];
+			float z = k[0] * zz[0] + k[1] * zz[1] + k[2] * zz[2] + k[3] * zz[3];
 
 			int i = int(y), j = int(x);
 
@@ -222,7 +224,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 				Vec3 position = k[0] * vertices[0] + k[1] * vertices[1] + k[2] * vertices[2];
 
-				if (_texturing && _material->texture.rows() > 0)
+				if (hastexture)
 				{
 					Vec2 uv = k[0] * texcoords[0] + k[1] * texcoords[1] + k[2] * texcoords[2];
 					color = _material->texture(int(fract(uv.y) * _material->texture.rows()), int(fract(uv.x) * _material->texture.cols()));
@@ -234,7 +236,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 				{
 					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
 					value += (max(0.0f, normal * _lightdir) + _ambient) * color;
-					if (_material->shininess != 0)
+					if (hasspecular)
 					{
 						Vec3 viewDir = -position.normalized();
 						float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _material->shininess);
