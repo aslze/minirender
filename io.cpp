@@ -222,9 +222,6 @@ SceneNode* loadOBJ(const asl::String& filename)
 			if (!meshes.has(name))
 			{
 				mesh = new TriMesh;
-				mesh->vertices = vertices;
-				mesh->normals = normals;
-				mesh->texcoords = texcoords;
 				mesh->material = materials.get(name, materials[""]);
 				meshes[name] = mesh;
 			}
@@ -249,6 +246,8 @@ SceneNode* loadOBJ(const asl::String& filename)
 					mat->diffuse = Vec3(parts[1], parts[2], parts[3]);
 				else if (parts[0] == "Ks")
 					mat->specular = Vec3(parts[1], parts[2], parts[3]);
+				else if (parts[0] == "Ke")
+					mat->emissive = Vec3(parts[1], parts[2], parts[3]);
 				else if (parts[0] == "Ns")
 				{
 					mat->shininess = parts[1];
@@ -272,8 +271,11 @@ SceneNode* loadOBJ(const asl::String& filename)
 	}
 
 	SceneNode* node = new SceneNode;
-	for (auto mesh : meshes)
+	for (auto& mesh : meshes)
 	{
+		mesh.value->vertices = vertices;
+		mesh.value->normals = normals;
+		mesh.value->texcoords = texcoords;
 		node->children << mesh.value;
 	}
 
