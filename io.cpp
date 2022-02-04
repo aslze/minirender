@@ -177,9 +177,6 @@ SceneNode* loadOBJ(const asl::String& filename)
 	Array<Vec3> normals;
 	Array<Vec2> texcoords;
 
-	mesh->vertices = vertices;
-	mesh->normals = normals;
-	mesh->texcoords = texcoords;
 	mesh->material = materials[""];
 
 	asl::Array<String> indices;
