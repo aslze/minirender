@@ -140,18 +140,25 @@ void saveSTL(TriMesh* mesh, const String& name)
 	asl::File file(name, asl::File::WRITE);
 	file << String(' ', 80);
 	file << mesh->indices.length() / 3;
+	StreamBuffer buffer;
 	for (int i = 0; i < mesh->indices.length(); i += 3)
 	{
 		Vec3 a = mesh->vertices[mesh->indices[i]],
 			b = mesh->vertices[mesh->indices[i + 1]],
 			c = mesh->vertices[mesh->indices[i + 2]];
 		Vec3 n = ((c - a) ^ (b - a)).normalized();
-		file << n.x << n.y << n.z;
-		file << a.x << a.y << a.z;
-		file << b.x << b.y << b.z;
-		file << c.x << c.y << c.z;
-		file << (short)0;
+		buffer << n.x << n.y << n.z;
+		buffer << a.x << a.y << a.z;
+		buffer << b.x << b.y << b.z;
+		buffer << c.x << c.y << c.z;
+		buffer << (short)0;
+		if (buffer.length() > 1000)
+		{
+			file << *buffer;
+			buffer.clear();
+		}
 	}
+	file << *buffer;
 }
 
 // Still only supports OBJs with normals, and with only triangles
