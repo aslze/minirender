@@ -1,5 +1,4 @@
-
-#include "minirender/renderer.h"
+#include "minirender/Renderer.h"
 #include <asl/TextFile.h>
 
 using namespace asl;
