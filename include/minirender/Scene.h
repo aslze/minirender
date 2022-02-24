@@ -75,6 +75,7 @@ struct Scene : public SceneNode
 {
 	float ambientLight;
 	asl::Vec3 light;
+	Scene();
 };
 
 }

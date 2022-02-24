@@ -9,18 +9,18 @@ endif()
 set(TARGET minirender)
 
 set(SRC
-    minirender/Scene.h
-    minirender/io.h
-    minirender/renderer.h
-    Scene.cpp
-    io.cpp
-    renderer.cpp
+	include/minirender/Scene.h
+	include/minirender/io.h
+	include/minirender/renderer.h
+	src/Scene.cpp
+	src/io.cpp
+	src/renderer.cpp
 )
 
 add_library(${TARGET} STATIC ${SRC})
 
 target_link_libraries(${TARGET} asls)
-target_include_directories(${TARGET} PUBLIC .)
+target_include_directories(${TARGET} PUBLIC include)
 
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -28,12 +28,12 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	set(TARGET render)
 
 	set(SRC
-		main.cpp
+		samples/main.cpp
 	)
 
 	add_executable(${TARGET} ${SRC})
 
-	target_link_libraries(${TARGET} minirender asls)
+target_link_libraries(${TARGET} minirender asls)
 
 endif()
 

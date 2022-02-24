@@ -40,4 +40,9 @@ Material::Material() :
 	opacity(1.0f)
 {}
 
+Scene::Scene()
+{
+	ambientLight = 0.1f;
+}
+
 }

@@ -256,6 +256,8 @@ void Renderer::render()
 	_renderables.clear();
 	_scene->collectShapes(_renderables, Matrix4::identity());
 
+	_ambient = _scene->ambientLight;
+
 	_znear = (-_projection(3, 3) - _projection(2, 3)) / (_projection(2, 2) + _projection(3, 2)) - 1.0f;
 
 	for (auto& item : _renderables)
