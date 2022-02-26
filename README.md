@@ -29,3 +29,14 @@ It interpolates normals to produce smooth Blinn-Phong diffuse and specular illum
 * Normals computation and polygon triangularization
 * Light position in world coordinates
 * More lights including spots
+
+
+## Console output
+
+The included sample, when started with options like this, will render to the console (a modern console):
+
+```
+render -console! -t 10 scene.obj
+```
+
+![Console output](https://github.com/aslze/minirender/releases/download/0.1.2/output-console.png)

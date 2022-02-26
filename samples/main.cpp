@@ -7,7 +7,6 @@
 using namespace asl;
 using namespace minirender;
 
-
 inline String console_bg() { return "\033[48;2;"; }
 
 inline String console_fg() { return "\033[38;2;"; }
@@ -40,13 +39,21 @@ int main(int argc, char* argv[])
 {
 	CmdArgs args;
 
-	bool useconsole = args.has("console");
-	int n = args["n"] | 1;
-	float d = args["d"] | 170;
-	bool save = args.has("save");
-	int sizew = args["w"] | 800;
+	bool useconsole = args.has("console");      // if given outputs to console
+	bool saving = args.has("save");             // if given saves images as PPM
+	float d = args["d"] | 140;                  // camera distance
+	int n = args["n"] | 1;                      // number of frames
+	double tout = args["t"] | 0;                // timeout in seconds (0 -> just n frames)
+	int sizew = args["w"] | 800;                // image size (not for console)
 	int sizeh = args["h"] | (sizew * 3 / 4);
-	float wx = deg2rad(float(args["rx"] | 0));
+	float wx = deg2rad(float(args["rx"] | 0));  // angular X speed deg/s
+	float wz = deg2rad(float(args["rz"] | 40)); // angular Z speed deg/s
+	float par = 0.5f;                           // pixel aspect ratio in console (chars not square)
+
+	if (useconsole && tout > 0)
+		n = 1000000;
+	else
+		tout = 1e10;
 
 	double t1 = now();
 
@@ -66,44 +73,58 @@ int main(int argc, char* argv[])
 
 	Renderer renderer;
 
-	renderer.setProjection(projectionFrustum(deg2rad(35.0f), renderer.aspect(), 10, 7000));
-	renderer.setView(Matrix4::translate(0, 0, -100));
-	renderer.setLight(Vec3(-0.15f, 0.6f, 1));
+	renderer.setLight(Vec3(-0.3f, 0.55f, 1));
 	renderer.setScene(scene);
 	renderer.setSize(sizew, sizeh);
+	renderer.setProjection(projectionFrustum(deg2rad(35.0f), renderer.aspect(), 10, 7000));
 
 	Array<double> times;
 
-	for (float i = 0; i < n; i += 1)
+	float rx = deg2rad(-60.0f), rz = 0;
+
+	double t0 = now();
+
+	for (float i = 0; i < n; i ++)
 	{
-		renderer.setView(Matrix4::translate(0, -2.6f, -d) * Matrix4::rotateX(deg2rad(-60.0f)));
-		
-		shape->transform = Matrix4::rotateZ(i * 0.05f) * Matrix4::rotateX(-i * wx);
+		double t = now();
+		float dt = useconsole? float(t - t0) : 0.1f;
+		t0 = t;
+
+		if (t - t2 > tout)
+		{
+			printf("%f %f %f\n", t, t2, tout);
+			break;
+		}
+
+		rz += wz * dt;
+		rx += wx * dt;
+
+		renderer.setView(Matrix4::translate(0, 0, -d) * Matrix4::rotateX(rx) * Matrix4::rotateZ(rz));
 
 		if (useconsole)
 		{
-			auto s = console.size();
+			auto s = console.size(); // set size and aspect based on current console size
 			renderer.setSize(s.w, s.h);
+			renderer.setProjection(projectionFrustum(deg2rad(35.0f), par * renderer.aspect(), 10, 7000));
 		}
 
 		renderer.render();
 
-		double t1 = now();
+		double ta = now();
 
 		if (useconsole)
 			consolePaint(renderer.getImage());
 
-		if (save)
+		if (saving)
 			savePPM(renderer.getImage(), String::f("out%04i.ppm", (int)i));
 
-		double t2 = now();
-		times << t2 - t1;
+		times << now() - ta;
 	}
 
 	double t6 = now();
 	printf("t=%f (t frame = %f)\n", t6-t2, (t6-t2)/n);
 
-	double tp = 0;
+	double tp = 0;  // average time between frames
 	for (auto t : times)
 		tp += t;
 	printf("t paint = %f\n", tp / times.length());
