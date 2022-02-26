@@ -6,7 +6,7 @@ Only requires the [ASL](https://github.com/aslze/asl) library.
 
 It interpolates normals to produce smooth Blinn-Phong diffuse and specular illumination.
 
-![Sample output](https://github.com/aslze/minirender/releases/download/0.1.2/output.jpg)
+![Sample output](https://github.com/aslze/minirender/releases/download/0.1.3/output.jpg)
 
 (image rendered from the model attached to the latest release)
 
@@ -39,4 +39,4 @@ The included sample, when started with options like this, will render to the con
 render -console! -t 10 scene.obj
 ```
 
-![Console output](https://github.com/aslze/minirender/releases/download/0.1.2/output-console.png)
+![Console output](https://github.com/aslze/minirender/releases/download/0.1.3/output-console.png)
