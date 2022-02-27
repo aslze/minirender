@@ -20,7 +20,7 @@ inline String console_rgb(int r, int g, int b)
 
 void consolePaint(const asl::Array2<asl::Vec3>& image)
 {
-	console.clear();
+	console.gotoxy(0, 0);
 	for (int i = 0; i < image.rows(); i++)
 	{
 		String line;
@@ -103,8 +103,14 @@ int main(int argc, char* argv[])
 
 		if (useconsole)
 		{
+			static Console::Size cs;
 			auto s = console.size(); // set size and aspect based on current console size
-			renderer.setSize(s.w, s.h);
+			if (s.w != cs.w || s.h != cs.h)
+			{
+				console.clear();
+				cs = s;
+			}
+			renderer.setSize(s.w, s.h - 1);
 			renderer.setProjection(projectionFrustum(deg2rad(35.0f), par * renderer.aspect(), 10, 7000));
 		}
 
