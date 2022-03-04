@@ -7,28 +7,21 @@
 using namespace asl;
 using namespace minirender;
 
-inline String console_bg() { return "\033[48;2;"; }
-
-inline String console_fg() { return "\033[38;2;"; }
-
-inline String console_rgb(int r, int g, int b)
-{
-	return String(15, "%i;%i;%im", clamp(r, 0, 255), clamp(g, 0, 255), clamp(b, 0, 255));
-}
 
 // paint image to console, printing ' ' with different background colors
 
 void consolePaint(const asl::Array2<asl::Vec3>& image)
 {
 	console.gotoxy(0, 0);
+	String line;
 	for (int i = 0; i < image.rows(); i++)
 	{
-		String line;
+		line = "";
 		for (int j = 0; j < image.cols(); j++)
 		{
 			auto c = (image(i, j) * 255).with<int>();
 
-			line << console_bg() << console_rgb(c.x, c.y, c.z) << ' ';
+			line << console.bg() << console.rgb(c.x, c.y, c.z) << ' ';
 		}
 		printf("%s\n", *line);
 	}
@@ -49,6 +42,7 @@ int main(int argc, char* argv[])
 	float wx = deg2rad(float(args["rx"] | 0));  // angular X speed deg/s
 	float wz = deg2rad(float(args["rz"] | 40)); // angular Z speed deg/s
 	float par = 0.5f;                           // pixel aspect ratio in console (chars not square)
+	bool oldconsole = args.has("oldconsole");   // console suports only 256 colors (there are even older ones)
 
 	if (useconsole && tout > 0)
 		n = 1000000;
@@ -81,6 +75,9 @@ int main(int argc, char* argv[])
 	Array<double> times;
 
 	float rx = deg2rad(-60.0f), rz = 0;
+
+	if (oldconsole)
+		console.setColorMode(1);
 
 	double t0 = now();
 
