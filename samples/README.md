@@ -17,6 +17,7 @@ Options:
 * `-save!` Will save frames to numbered PPM files.
 * `-w <number>` (and `-h <number>`) Sets image size for rendering (ignored if console used).
 * `-rx <number>` and `-rz <number>` Rotation around X and Z in deg/s (default RZ 40, RX 0)
+* `-oldconsole!` The console only supports 256 colors
 
 Render 10 second animation in real time on the console:
 
@@ -24,10 +25,13 @@ Render 10 second animation in real time on the console:
 render -console! -t 10 scene.obj
 ```
 
+Older consoles (e.g. Gnome on Ubuntu 14) do not support 24 bit RGB colors, but they can use a palette of 256 colors. Add the option `-oldconsole` together with `-console` to make the rendering use this palette (worse quality). Console rendering has been tested on Ubuntu 10 (256 colors), Ubuntu 18, Windows Terminal and Windows 10 console (cmd).
+
 Render 50 frames, rotating 30 deg/s, and save them as PPM files.
 
 ```
 render -save! -rz 30 -n 50 scene.obj
 ```
 
-There is a sample file in the latest release ("sample_model.zip").
+There is a sample file in the assets of release 0.1.3 you can use ("sample_model.zip").
+

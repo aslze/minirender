@@ -8,7 +8,7 @@ It interpolates normals to produce smooth Blinn-Phong diffuse and specular illum
 
 ![Sample output](https://github.com/aslze/minirender/releases/download/0.1.3/output.jpg)
 
-(image rendered from the model attached to the latest release)
+(image rendered from the model attached to release 0.1.3 in around 30 ms.)
 
 
 ## Current features
@@ -33,7 +33,7 @@ It interpolates normals to produce smooth Blinn-Phong diffuse and specular illum
 
 ## Console output
 
-The included sample, when started with options like this, will render to the console (a modern console):
+The included [sample](samples/README.md) can render on the console in real time. The `-console` option enables this, and `-t` indicates 10 seconds of animation.
 
 ```
 render -console! -t 10 scene.obj
