@@ -40,7 +40,6 @@ Matrix4 projectionOrtho(float fov, float aspect, float n, float f)
 	return projectionOrtho(-fov * aspect / 2, fov * aspect / 2, -fov / 2, fov / 2, n, f);
 }
 
-
 Renderer::Renderer()
 {
 	setSize(800, 600);
@@ -257,7 +256,7 @@ void Renderer::render()
 
 	_ambient = _scene->ambientLight;
 
-	_znear = (-_projection(3, 3) - _projection(2, 3)) / (_projection(2, 2) + _projection(3, 2)) - 1.0f;
+	_znear = _projection(3, 2) != 0 ? _projection(2, 3) / (_projection(2, 2) - 1) : (_projection(2, 3) + 1) / _projection(2, 2);
 
 	for (auto& item : _renderables)
 	{
