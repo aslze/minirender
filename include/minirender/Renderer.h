@@ -11,6 +11,7 @@ asl::Matrix4 projectionPerspective(float l, float r, float b, float t, float n, 
 asl::Matrix4 projectionFrustum(float fov, float aspect, float n, float f);
 asl::Matrix4 projectionFrustumH(float fov, float aspect, float n, float f);
 asl::Matrix4 projectionOrtho(float fov, float aspect, float n, float f);
+asl::Matrix4 projectionCV(const asl::Matrix4& K, float w, float h, float n, float f);
 
 
 class Renderer

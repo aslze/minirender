@@ -23,6 +23,16 @@ Matrix4 projectionPerspective(float l, float r, float b, float t, float n, float
 		0, 0, -1, 0);
 }
 
+Matrix4 projectionCV(const Matrix4& K, float w, float h, float n, float f)
+{
+	return Matrix4(
+		K(0, 0) * 2 / w, K(0, 1) * 2 / w, -2 * K(0, 2) / w + 1, 0,
+		K(1, 0) * 2 / h, K(1, 1) * 2 / h, 2 * K(1, 2) / h - 1, 0,
+		0, 0, -(f + n) / (f - n), -2 * f * n / (f - n),
+		0, 0, -1, 0
+	);
+}
+
 Matrix4 projectionFrustum(float fov, float aspect, float n, float f)
 {
 	float t = tan(fov / 2);
