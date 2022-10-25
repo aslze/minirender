@@ -43,6 +43,14 @@ int main(int argc, char* argv[])
 	float wz = deg2rad(float(args["rz"] | 40)); // angular Z speed deg/s
 	float par = 0.5f;                           // pixel aspect ratio in console (chars not square)
 	bool oldconsole = args.has("oldconsole");   // console suports only 256 colors (there are even older ones)
+	
+	float yaw = deg2rad(float(args["yaw"] | 0));
+	float tilt = deg2rad(float(args["tilt"] | 20));
+	
+	String outname = args["o"] | ((n == 1) ? "out.ppm" : "out%04i.ppm");
+
+	if (args.has("o"))
+		saving = true;
 
 	if (useconsole && tout > 0)
 		n = 1000000;
@@ -61,7 +69,7 @@ int main(int argc, char* argv[])
 	printf("load %s %.3f s\n", *args[0], t2 - t1);
 
 	Scene* scene = new Scene();
-	
+
 	scene->children << shape;
 	scene->ambientLight = 0.2f;
 
@@ -74,17 +82,17 @@ int main(int argc, char* argv[])
 
 	Array<double> times;
 
-	float rx = deg2rad(-60.0f), rz = 0;
+	float rx = -(float)PI/2 + tilt, rz = yaw;
 
 	if (oldconsole)
 		console.setColorMode(1);
 
 	double t0 = now();
 
-	for (float i = 0; i < n; i ++)
+	for (float i = 0; i < n; i++)
 	{
 		double t = now();
-		float dt = useconsole? float(t - t0) : 0.1f;
+		float dt = useconsole ? float(t - t0) : 0.1f;
 		t0 = t;
 
 		if (t - t2 > tout)
@@ -119,17 +127,17 @@ int main(int argc, char* argv[])
 			consolePaint(renderer.getImage());
 
 		if (saving)
-			savePPM(renderer.getImage(), String::f("out%04i.ppm", (int)i));
+			savePPM(renderer.getImage(), n == 1 ? outname : String::f(*outname, (int)i));
 
 		times << now() - ta;
 	}
 
 	double t6 = now();
-	printf("t=%f (t frame = %f)\n", t6-t2, (t6-t2)/n);
+	printf("t=%.3f (t frame = %.3f)\n", t6 - t2, (t6 - t2) / n);
 
 	double tp = 0;  // average time between frames
 	for (auto t : times)
 		tp += t;
-	printf("t paint = %f\n", tp / times.length());
+	printf("t paint = %.3f\n", tp / times.length());
 	return 0;
 }
