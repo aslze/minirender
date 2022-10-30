@@ -43,11 +43,13 @@ int main(int argc, char* argv[])
 	float wz = deg2rad(float(args["rz"] | 40)); // angular Z speed deg/s
 	float par = 0.5f;                           // pixel aspect ratio in console (chars not square)
 	bool oldconsole = args.has("oldconsole");   // console suports only 256 colors (there are even older ones)
-	
+	bool fit = args.has("fit");
+	float fov = deg2rad(35.f);
 	float yaw = deg2rad(float(args["yaw"] | 0));
 	float tilt = deg2rad(float(args["tilt"] | 20));
 	
 	String outname = args["o"] | ((n == 1) ? "out.ppm" : "out%04i.ppm");
+
 
 	if (args.has("o"))
 		saving = true;
@@ -73,12 +75,26 @@ int main(int argc, char* argv[])
 	scene->children << shape;
 	scene->ambientLight = 0.2f;
 
+	auto box = scene->getBbox();
+
+	auto size = box.size();
+	auto center = box.center();
+
+	if (fit)
+	{
+		float dh = max(size.x, size.y) / (2 * tan(fov * sizew / sizeh / 2));
+		float dv = size.z / (2 * tan(fov / 2));
+		d = 1.55f * max(dh, dv);
+		scene->transform = Matrix4::translate(-center);
+	}
+
+
 	Renderer renderer;
 
 	renderer.setLight(Vec3(-0.3f, 0.55f, 1));
 	renderer.setScene(scene);
 	renderer.setSize(sizew, sizeh);
-	renderer.setProjection(projectionFrustum(deg2rad(35.0f), renderer.aspect(), 10, 7000));
+	renderer.setProjection(projectionFrustum(fov, renderer.aspect(), 10, 7000));
 
 	Array<double> times;
 
@@ -97,7 +113,6 @@ int main(int argc, char* argv[])
 
 		if (t - t2 > tout)
 		{
-			printf("%f %f %f\n", t, t2, tout);
 			break;
 		}
 
@@ -116,7 +131,7 @@ int main(int argc, char* argv[])
 				cs = s;
 			}
 			renderer.setSize(s.w, s.h - 1);
-			renderer.setProjection(projectionFrustum(deg2rad(35.0f), par * renderer.aspect(), 10, 7000));
+			renderer.setProjection(projectionFrustum(fov, par * renderer.aspect(), 10, 7000));
 		}
 
 		renderer.render();
@@ -133,11 +148,12 @@ int main(int argc, char* argv[])
 	}
 
 	double t6 = now();
-	printf("t=%.3f (t frame = %.3f)\n", t6 - t2, (t6 - t2) / n);
 
 	double tp = 0;  // average time between frames
 	for (auto t : times)
 		tp += t;
+
+	printf("t = %.3f (t frame = %.3f)\n", t6 - t2, (t6 - t2) / n);
 	printf("t paint = %.3f\n", tp / times.length());
 	return 0;
 }
