@@ -22,6 +22,16 @@ struct Vertex
 	Vertex(asl::Vec3& p, asl::Vec3& n, asl::Vec2& t) : position(p), normal(n), uv(t) {}
 };
 
+struct BBox
+{
+	asl::Vec3 pmin, pmax;
+	BBox() { pmin = asl::Vec3(1, 1, 1) * asl::infinity(); pmax = -pmin; }
+	BBox& operator+=(const BBox& box) { pmin = min(pmin, box.pmin); pmax = max(pmax, box.pmax); return *this; }
+	BBox& operator+=(const asl::Vec3& p) { pmin = min(pmin, p); pmax = max(pmax, p); return *this; }
+	asl::Vec3 size() const { return max(pmax - pmin, asl::Vec3::zeros()); }
+	asl::Vec3 center() const { return (pmax + pmin) / 2; }
+};
+
 struct TriMesh;
 
 struct Material
@@ -49,6 +59,7 @@ struct SceneNode
 	SceneNode();
 	virtual ~SceneNode() {}
 	virtual void collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform);
+	virtual BBox getBbox(const asl::Matrix4& xform = asl::Matrix4::identity()) const;
 };
 
 struct Shape : public SceneNode
@@ -67,6 +78,7 @@ struct TriMesh : public Shape
 	asl::Array<int> texcoordsI;
 
 	virtual void collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform);
+	virtual BBox getBbox(const asl::Matrix4& xform = asl::Matrix4::identity()) const;
 
 	TriMesh();
 };
