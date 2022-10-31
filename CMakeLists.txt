@@ -11,8 +11,9 @@ endif()
 if(NOT TARGET asls)
 	find_package(ASL)
 	if(NOT TARGET asls)
+		cmake_minimum_required(VERSION 3.14)
 		include(FetchContent)
-		FetchContent_Declare(asl URL https://github.com/aslze/asl/archive/c3de6dad26589a26c897eeb4ecd1571ff94def67.zip)
+		FetchContent_Declare(asl URL https://github.com/aslze/asl/archive/5c4c0adf6b398e39d13507582a5a9f2d510e52e0.zip)
 		FetchContent_MakeAvailable(asl)
 	endif()
 endif()
@@ -20,7 +21,5 @@ endif()
 add_subdirectory(src)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-
 	add_subdirectory(samples)
-	
 endif()
