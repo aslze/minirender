@@ -290,7 +290,11 @@ SceneNode* loadOBJ(const asl::String& filename)
 
 void savePPM(const asl::Array2<asl::Vec3>& image, const asl::String& filename)
 {
-	File file(filename, File::WRITE);
+	File file;
+	if (filename != "--")
+		file.open(filename, File::WRITE);
+	else
+		file.use(stdout);
 	String header;
 	header << "P6\n" << image.cols() << " " << image.rows() << "\n" << 255 << "\n";
 	file << header;

@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 	float wz = deg2rad(float(args["rz"] | 40)); // angular Z speed deg/s
 	float par = 0.5f;                           // pixel aspect ratio in console (chars not square)
 	bool oldconsole = args.has("oldconsole");   // console suports only 256 colors (there are even older ones)
-	bool fit = args.has("fit");
+	bool fit = args.has("fit") || !args.has("d");
 	float fov = deg2rad(35.f);
 	float yaw = deg2rad(float(args["yaw"] | 0));
 	float tilt = deg2rad(float(args["tilt"] | 20));
@@ -53,6 +53,8 @@ int main(int argc, char* argv[])
 
 	if (args.has("o"))
 		saving = true;
+
+	bool silent = (outname == "--");
 
 	if (useconsole && tout > 0)
 		n = 1000000;
@@ -68,7 +70,8 @@ int main(int argc, char* argv[])
 
 	double t2 = now();
 
-	printf("load %s %.3f s\n", *args[0], t2 - t1);
+	if (!silent)
+		printf("load %s %.3f s\n", *args[0], t2 - t1);
 
 	Scene* scene = new Scene();
 
@@ -153,7 +156,10 @@ int main(int argc, char* argv[])
 	for (auto t : times)
 		tp += t;
 
-	printf("t = %.3f (t frame = %.3f)\n", t6 - t2, (t6 - t2) / n);
-	printf("t paint = %.3f\n", tp / times.length());
+	if (!silent)
+	{
+		printf("t = %.3f (t frame = %.3f)\n", t6 - t2, (t6 - t2) / n);
+		printf("t paint = %.3f\n", tp / times.length());
+	}
 	return 0;
 }
