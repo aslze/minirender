@@ -47,8 +47,32 @@ int main(int argc, char* argv[])
 	float fov = deg2rad(35.f);
 	float yaw = deg2rad(float(args["yaw"] | 0));
 	float tilt = deg2rad(float(args["tilt"] | 20));
+	Vec3 bg = args["bgcolor"].split(',').resize(3).with<float>().ptr();
+
+	bg /= 255;
 	
 	String outname = args["o"] | ((n == 1) ? "out.ppm" : "out%04i.ppm");
+
+	if (args.length() == 0)
+	{
+		printf("Render one or many images of a 3D model (STL or OBJ) to the console or to PPM files\n\n"
+			"render [options] file\n"
+			" -o <string> file name to save image(s) to (use -- for stdout, or \"...%%04i...\" for many frames)\n"
+			" -n <int> number of frames to paint (default: 1)\n"
+			" -t <float> timeout in seconds for 'animation'\n"
+			" -w <int> image horizontal size (default: 800)\n"
+			" -h <int> image vertical size (default: w * 3/4)\n"
+			" -yaw <float> rotation angle around Z (vertical axis) in degrees\n"
+			" -tilt <float> rotation angle around X axis in degrees\n"
+			" -rx <float> angular speed around X in degrees/s\n"
+			" -rz <float> angular speed around Z in degrees/s\n"
+			" -d <float> camera distance to origin (default: automatic to fit scene)\n"
+			" -bgcolor <int,int,int> RGB color of background\n\n"
+			" -console! render to the console\n"
+			" -oldconsole! support old consoles with only 256 colors\n"
+		);
+		return 0;
+	}
 
 
 	if (args.has("o"))
@@ -94,6 +118,7 @@ int main(int argc, char* argv[])
 
 	Renderer renderer;
 
+	renderer.setBackground(bg);
 	renderer.setLight(Vec3(-0.3f, 0.55f, 1));
 	renderer.setScene(scene);
 	renderer.setSize(sizew, sizeh);

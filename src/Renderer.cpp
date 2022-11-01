@@ -57,10 +57,10 @@ Renderer::Renderer()
 	_lightdir = Vec3(-0.15f, 0.6f, 1).normalized();
 	_ambient = 0.1f;
 	_material = new Material();
-	//_material->shininess = 15.0f;
 	_scene = nullptr;
 	_lighting = true;
 	_texturing = true;
+	_bgcolor = Vec3(0, 0, 0);
 }
 
 void Renderer::setSize(int w, int h)
@@ -81,7 +81,7 @@ void Renderer::clear()
 	for (int i = 0; i < _image.rows(); i++)
 		for (int j = 0; j < _image.cols(); j++)
 		{
-			_image(i, j) = Vec3(0, 0, 0);
+			_image(i, j) = _bgcolor;
 			_depth(i, j) = 1e9f;
 			_points(i, j) = Vec3(0, 0, 0);
 		}

@@ -24,6 +24,7 @@ class Renderer
 	asl::Matrix4 _modelview;
 	asl::Matrix4 _normalmat;
 	asl::Vec3 _lightdir;
+	asl::Vec3 _bgcolor;
 	float _ambient;
 	float _znear;
 	Scene* _scene;
@@ -43,6 +44,7 @@ public:
 	void setMaterial(Material* material) { _material = material; }
 	void setLighting(bool on) { _lighting = on; }
 	void setTexturing(bool on) { _texturing = on; }
+	void setBackground(const asl::Vec3& color) { _bgcolor = color; }
 	void clear();
 	void render();
 	void paintMesh(TriMesh* mesh, const asl::Matrix4& transform = asl::Matrix4::identity());
