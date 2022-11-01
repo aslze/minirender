@@ -10,12 +10,16 @@ model_path can point to an STL file or an OBJ file (triangulated and with normal
 
 Options:
 
-* `-n <number>` Number of frames to render (default 1). The model will rotate around Z between frames.
-* `-t <number>` Total time, if given (seconds)
-* `-d <number>` Camera distance from origin (default 140)
+* `-n <number>` Number of frames to render (default 1). The model will rotate by 'rx', 'rz' between frames.
+* `-t <number>` Total time in seconds, if given, and will produce multiple frames
+* `-d <number>` Camera distance from origin (default: automatic to fit scene in view)
 * `-console!` Will render on the console, if the console supports RGB color codes.
 * `-save!` Will save frames to numbered PPM files.
+* `-o <string>` Output file name (use `--` for stdout, or `...%04i...` for multiple frames)
 * `-w <number>` (and `-h <number>`) Sets image size for rendering (ignored if console used).
+* `-yaw <number>` Yaw angle (rotation around Z) of camera in degrees
+* `-tilt <number>` Tilt angle (rotation around X) of camera in degrees
+* `-bgcolor <r,g,b>` Set background color (default black)
 * `-rx <number>` and `-rz <number>` Rotation around X and Z in deg/s (default RZ 40, RX 0)
 * `-oldconsole!` The console only supports 256 colors
 
@@ -30,7 +34,7 @@ Older consoles (e.g. Gnome on Ubuntu 14) do not support 24 bit RGB colors, but t
 Render 50 frames, rotating 30 deg/s, and save them as PPM files.
 
 ```
-render -save! -rz 30 -n 50 scene.obj
+render -o images-%04i.ppm -rz 30 -n 50 scene.obj
 ```
 
 There is a sample file in the assets of release 0.1.3 you can use ("sample_model.zip").
