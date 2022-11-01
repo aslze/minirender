@@ -41,7 +41,7 @@ public:
 	void setScene(Scene* scene);
 	void setProjection(const asl::Matrix4& m) { _projection = m; }
 	void setView(const asl::Matrix4& m) { _view = m; }
-	void setLight(const asl::Vec3& v) { _lightdir = v; }
+	void setLight(const asl::Vec3& v) { _lightdir = v.normalized(); }
 	void setMaterial(Material* material) { _material = material; }
 	void setLighting(bool on) { _lighting = on; }
 	void setTexturing(bool on) { _texturing = on; }
