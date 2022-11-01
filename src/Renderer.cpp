@@ -56,7 +56,8 @@ Renderer::Renderer()
 	_projection = projectionOrtho(-40, 40, -30, 30, 50, 120);
 	_lightdir = Vec3(-0.15f, 0.6f, 1).normalized();
 	_ambient = 0.1f;
-	_material = new Material();
+	_defmaterial = new Material();
+	_material = _defmaterial;
 	_scene = nullptr;
 	_lighting = true;
 	_texturing = true;
@@ -281,8 +282,7 @@ void Renderer::render()
 
 void Renderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 {
-	if (mesh->material)
-		_material = mesh->material;
+	_material = (mesh->material) ? mesh->material : _defmaterial;
 	_modelview = _view * transform;
 	_normalmat = _modelview.inverse().t();
 	for (int i = 0; i < mesh->indices.length(); i += 3)

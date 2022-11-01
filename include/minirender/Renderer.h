@@ -29,6 +29,7 @@ class Renderer
 	float _znear;
 	Scene* _scene;
 	Material* _material;
+	Material* _defmaterial;
 	asl::Array<Renderable> _renderables;
 	void clipTriangle(float z, Vertex v[3]);
 	bool _lighting;
