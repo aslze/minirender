@@ -187,10 +187,11 @@ SceneNode* loadOBJ(const asl::String& filename)
 	mesh->material = materials[""];
 
 	asl::Array<String> indices;
+	String line;
 
 	while (!file.end())
 	{
-		String line = file.readLine();
+		file.readLine(line);
 		if (line.startsWith('#'))
 			continue;
 		Array<String> parts = line.split();
