@@ -19,6 +19,8 @@ class Renderer
 	asl::Array2<asl::Vec3> _image;
 	asl::Array2<float> _depth;
 	asl::Array2<asl::Vec3> _points;
+	asl::Array<asl::Vec3> _vertices;
+	asl::Array<asl::Vec3> _normals;
 	asl::Matrix4 _view;
 	asl::Matrix4 _projection;
 	asl::Matrix4 _modelview;

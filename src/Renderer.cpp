@@ -1,5 +1,7 @@
 #include "minirender/Renderer.h"
-#include <asl/TextFile.h>
+
+#define PREMULT
+#define FAST_LIGHT
 
 using namespace asl;
 
@@ -135,15 +137,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	Vec3 vertices[3] = { v0.position, v1.position, v2.position };
 	Vec3 normals[3] = { v0.normal, v1.normal, v2.normal };
 	Vec2 texcoords[3] = { v0.uv, v1.uv, v2.uv };
-	Vec4 cverts[3];
 	Vec3 ndc[3];
-	if (world)
-		for (int i = 0; i < 3; i++)
-		{
-			vertices[i] = _modelview * vertices[i];
-			normals[i] = _normalmat * normals[i];
-		}
-
 	if (world && (vertices[0].z > _znear || vertices[1].z > _znear || vertices[2].z > _znear))
 	{
 		if (vertices[0].z > _znear && vertices[1].z > _znear && vertices[2].z > _znear)
@@ -154,16 +148,17 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 		return;
 	}
 
+	float w = (float)_image.cols(), h = (float)_image.rows();
+
 	for (int i = 0; i < 3; i++)
 	{
-		cverts[i] = _projection * asl::Vec4(vertices[i], 1.0f);
-		ndc[i] = cverts[i].h2c();
+		ndc[i] = (_projection * asl::Vec4(vertices[i], 1.0f)).h2c();
 	}
 
 	for (int i = 0; i < 3; i++) // pixel coords
 	{
-		ndc[i].x = (1 + ndc[i].x) * _image.cols() / 2;
-		ndc[i].y = (1 - ndc[i].y) * _image.rows() / 2;
+		ndc[i].x = (1 + ndc[i].x) * w / 2;
+		ndc[i].y = (1 - ndc[i].y) * h / 2;
 	}
 
 	Vec2 p[3] = { ndc[0].xy(), ndc[1].xy(), ndc[2].xy() };
@@ -171,7 +166,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	Vec2 pmin = min(p[0], p[1], p[2]);
 	Vec2 pmax = max(p[0], p[1], p[2]);
 
-	if (pmax.x < 0 || pmax.y < 0 || pmin.x > _image.cols() || pmin.y > _image.rows())
+	if (pmax.x < 0 || pmax.y < 0 || pmin.x > w || pmin.y > h)
 		return;
 
 	float a = -((p[0] - p[1]) ^ (p[2] - p[1]) / 2);
@@ -186,10 +181,10 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	Vec2 n1 = (p[0] - p[2]).perpend() * i2a;
 	Vec2 n2 = (p[1] - p[0]).perpend() * i2a;
 
-	pmin.x = (float)clamp((int)pmin.x, 0, _image.cols() - 1);
-	pmax.x = (float)clamp((int)pmax.x, 0, _image.cols() - 1);
-	pmin.y = (float)clamp((int)pmin.y, 0, _image.rows() - 1);
-	pmax.y = (float)clamp((int)pmax.y, 0, _image.rows() - 1);
+	pmin.x = (float)clamp((float)pmin.x, 0.f, w - 1);
+	pmax.x = (float)clamp((float)pmax.x, 0.f, w - 1);
+	pmin.y = (float)clamp((float)pmin.y, 0.f, h - 1);
+	pmax.y = (float)clamp((float)pmax.y, 0.f, h - 1);
 
 	float zz[4] = { ndc[0].z, ndc[1].z, ndc[2].z, 1 };
 	float iz[4] = { 1 / -vertices[0].z, 1 / -vertices[1].z, 1 / -vertices[2].z, 1 };
@@ -238,17 +233,26 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 					Vec2 uv = k[0] * texcoords[0] + k[1] * texcoords[1] + k[2] * texcoords[2];
 					color = _material->texture(int(fract(uv.y) * _material->texture.rows()), int(fract(uv.x) * _material->texture.cols()));
 				}
-				
+
 				Vec3 value = _material->emissive;
-				
+
 				if (_lighting)
 				{
+#ifndef FAST_LIGHT
 					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
 					value += (max(0.0f, normal * _lightdir) + _ambient) * color;
+#else
+					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]);
+					value += (max(0.0f, normal * _lightdir)/normal.length() + _ambient) * color;
+#endif
 					if (hasspecular)
 					{
 						Vec3 viewDir = -position.normalized();
+#ifndef FAST_LIGHT
 						float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _material->shininess);
+#else
+						float specular = pow(max((_lightdir + viewDir) * normal, 0.0f) / ((_lightdir + viewDir).length()* normal.length()), _material->shininess);
+#endif
 						value += specular * _material->specular;
 					}
 				}
@@ -285,17 +289,38 @@ void Renderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 	_material = (mesh->material) ? mesh->material : _defmaterial;
 	_modelview = _view * transform;
 	_normalmat = _modelview.inverse().t();
+
+#ifdef PREMULT
+	_vertices.resize(mesh->vertices.length());
+	_normals.resize(mesh->normals.length());
+
+	for (int i = 0; i < _vertices.length(); i++)
+		_vertices[i] = _modelview * mesh->vertices[i];
+
+	for (int i = 0; i < _normals.length(); i++)
+		_normals[i] = _normalmat * mesh->normals[i];
+#endif
+
 	for (int i = 0; i < mesh->indices.length(); i += 3)
 	{
 		int ia = mesh->indices[i];
 		int ib = mesh->indices[i + 1];
 		int ic = mesh->indices[i + 2];
-		Vec3 a = mesh->vertices[ia];
-		Vec3 b = mesh->vertices[ib];
-		Vec3 c = mesh->vertices[ic];
-		Vec3 na = mesh->normals[mesh->normalsI[i]];
-		Vec3 nb = mesh->normals[mesh->normalsI[i + 1]];
-		Vec3 nc = mesh->normals[mesh->normalsI[i + 2]];
+#ifndef PREMULT
+		Vec3 a = _modelview * mesh->vertices[ia];
+		Vec3 b = _modelview * mesh->vertices[ib];
+		Vec3 c = _modelview * mesh->vertices[ic];
+		Vec3 na = _normalmat * mesh->normals[mesh->normalsI[i]];
+		Vec3 nb = _normalmat * mesh->normals[mesh->normalsI[i + 1]];
+		Vec3 nc = _normalmat * mesh->normals[mesh->normalsI[i + 2]];
+#else
+		Vec3& a = _vertices[ia];
+		Vec3& b = _vertices[ib];
+		Vec3& c = _vertices[ic];
+		Vec3& na = _normals[mesh->normalsI[i]];
+		Vec3& nb = _normals[mesh->normalsI[i + 1]];
+		Vec3& nc = _normals[mesh->normalsI[i + 2]];
+#endif
 		if (mesh->texcoords.length() > 0)
 		{
 			Vec2 ta = mesh->texcoords[mesh->texcoordsI[i]];

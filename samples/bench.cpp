@@ -30,8 +30,8 @@ TriMesh* createObject(int m, int n)
 			mesh->normals << Vec3(nor.x * cos(j * da), nor.x * sin(j * da), nor.y).normalized();
 
 			if (j > 0 && i > 0)
-				mesh->indices << (n * (i - 1) + j - 1) << (n * (i - 1) + j) << (n * i + j) <<
-								(n * (i - 1) + j - 1) << (n * i + j) << (n * i + j - 1);
+				mesh->indices << (n * (i - 1) + j - 1) << (n * (i - 1) + j) << (n * i + j)
+								<< (n * (i - 1) + j - 1) << (n * i + j) << (n * i + j - 1);
 		}
 	}
 	mesh->normalsI = mesh->indices;
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 
 	Scene* scene = new Scene();
 
-	Random random;
+	Random random(false);
 
 	for (int i = 0; i < 20; i++)
 	{
