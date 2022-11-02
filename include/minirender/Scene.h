@@ -17,9 +17,9 @@ struct Vertex
 	asl::Vec2 uv;
 
 	Vertex() {}
-	Vertex(asl::Vec3& p) : position(p), normal(0, 0, 1), uv(0, 0) {}
-	Vertex(asl::Vec3& p, asl::Vec3& n) : position(p), normal(n), uv(0, 0) {}
-	Vertex(asl::Vec3& p, asl::Vec3& n, asl::Vec2& t) : position(p), normal(n), uv(t) {}
+	Vertex(const asl::Vec3& p) : position(p), normal(0, 0, 1), uv(0, 0) {}
+	Vertex(const asl::Vec3& p, const asl::Vec3& n) : position(p), normal(n), uv(0, 0) {}
+	Vertex(const asl::Vec3& p, const asl::Vec3& n, const asl::Vec2& t) : position(p), normal(n), uv(t) {}
 };
 
 struct BBox
