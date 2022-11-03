@@ -2,10 +2,21 @@
 
 #define PREMULT
 #define FAST_LIGHT
+#define POINTLIGHT
 
 using namespace asl;
 
 namespace minirender {
+
+
+inline Vec3 operator^(const Matrix4& m, const Vec3& p)
+{
+	float iw = 1/(m(3, 0) * p.x + m(3, 1) * p.y + m(3, 2) * p.z + m(3, 3));
+	return Vec3(
+		iw * (m(0, 0) * p.x + m(0, 1) * p.y + m(0, 2) * p.z + m(0, 3)),
+		iw * (m(1, 0) * p.x + m(1, 1) * p.y + m(1, 2) * p.z + m(1, 3)),
+		iw * (m(2, 0) * p.x + m(2, 1) * p.y + m(2, 2) * p.z + m(2, 3)));
+}
 
 Matrix4 projectionOrtho(float l, float r, float b, float t, float n, float f)
 {
@@ -81,13 +92,9 @@ void Renderer::setScene(Scene* scene)
 
 void Renderer::clear()
 {
-	for (int i = 0; i < _image.rows(); i++)
-		for (int j = 0; j < _image.cols(); j++)
-		{
-			_image(i, j) = _bgcolor;
-			_depth(i, j) = 1e9f;
-			_points(i, j) = Vec3(0, 0, 0);
-		}
+	_image.set(_bgcolor);
+	_depth.set(1e11f);
+	_points.set(Vec3(0, 0, 0));
 }
 
 inline Vertex clip(float z, const Vertex& v1, const Vertex& v2)
@@ -137,7 +144,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	Vec3 vertices[3] = { v0.position, v1.position, v2.position };
 	Vec3 normals[3] = { v0.normal, v1.normal, v2.normal };
 	Vec2 texcoords[3] = { v0.uv, v1.uv, v2.uv };
-	Vec3 ndc[3];
+
 	if (world && (vertices[0].z > _znear || vertices[1].z > _znear || vertices[2].z > _znear))
 	{
 		if (vertices[0].z > _znear && vertices[1].z > _znear && vertices[2].z > _znear)
@@ -150,18 +157,26 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 	float w = (float)_image.cols(), h = (float)_image.rows();
 
+	Vec3 ndc[3];
+	Vec2 p[3];
+
 	for (int i = 0; i < 3; i++)
 	{
-		ndc[i] = (_projection * asl::Vec4(vertices[i], 1.0f)).h2c();
+		ndc[i] = _projection ^ vertices[i];
 	}
 
 	for (int i = 0; i < 3; i++) // pixel coords
 	{
-		ndc[i].x = (1 + ndc[i].x) * w / 2;
-		ndc[i].y = (1 - ndc[i].y) * h / 2;
+		p[i].x = (1 + ndc[i].x) * (w / 2);
+		p[i].y = (1 - ndc[i].y) * (h / 2);
 	}
 
-	Vec2 p[3] = { ndc[0].xy(), ndc[1].xy(), ndc[2].xy() };
+	float a = (p[0] - p[1]) ^ (p[2] - p[1]) * 0.5f;
+
+	if (a <= 0) // front face
+	{
+		return; // back face cull
+	}
 
 	Vec2 pmin = min(p[0], p[1], p[2]);
 	Vec2 pmax = max(p[0], p[1], p[2]);
@@ -169,15 +184,9 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	if (pmax.x < 0 || pmax.y < 0 || pmin.x > w || pmin.y > h)
 		return;
 
-	float a = -((p[0] - p[1]) ^ (p[2] - p[1]) / 2);
-	float i2a = (a == 0) ? 0.0f : 1.0f / (2 * a);
+	float i2a = (a == 0) ? 0.0f : -1.0f / (2 * a);
 
-	if (a >= 0) // front face
-	{
-		return; // back face cull
-	}
-
-	Vec2 n0 = (p[2] - p[1]).perpend() * i2a;
+	//Vec2 n0 = (p[2] - p[1]).perpend() * i2a;
 	Vec2 n1 = (p[0] - p[2]).perpend() * i2a;
 	Vec2 n2 = (p[1] - p[0]).perpend() * i2a;
 
@@ -210,21 +219,25 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 			k[1] = e1;
 			k[2] = e2;
 
-			float z = k[0] * zz[0] + k[1] * zz[1] + k[2] * zz[2] + k[3] * zz[3];
+			float z;
+
+			if (persp)
+			{
+				z = 1 / (k[0] * iz[0] + k[1] * iz[1] + k[2] * iz[2]);
+				k[0] *= z * iz[0];
+				k[1] *= z * iz[1];
+				k[2] *= z * iz[2];
+			}
+			else
+				z = k[0] * zz[0] + k[1] * zz[1] + k[2] * zz[2] + k[3] * zz[3];
 
 			int i = int(y), j = int(x);
 
 			auto& pixdepth = _depth(i, j);
+
 			if (z < pixdepth)
 			{
 				pixdepth = z;
-				if (persp)
-				{
-					z = 1 / (k[0] * iz[0] + k[1] * iz[1] + k[2] * iz[2]);
-					k[0] *= z * iz[0];
-					k[1] *= z * iz[1];
-					k[2] *= z * iz[2];
-				}
 
 				Vec3 position = k[0] * vertices[0] + k[1] * vertices[1] + k[2] * vertices[2];
 
@@ -238,6 +251,11 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 				if (_lighting)
 				{
+#ifdef POINTLIGHT
+					Vec3 _lightdir = (this->_lightdir - position).normalized();
+#endif
+
+					
 #ifndef FAST_LIGHT
 					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
 					value += (max(0.0f, normal * _lightdir) + _ambient) * color;
@@ -245,6 +263,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]);
 					value += (max(0.0f, normal * _lightdir)/normal.length() + _ambient) * color;
 #endif
+
 					if (hasspecular)
 					{
 						Vec3 viewDir = -position.normalized();
@@ -268,6 +287,12 @@ void Renderer::render()
 	clear();
 	_renderables.clear();
 	_scene->collectShapes(_renderables, Matrix4::identity());
+
+#ifdef POINTLIGHT
+	_lightdir = _view * _light;
+#else
+	_lightdir = _light;
+#endif
 
 	_ambient = _scene->ambientLight;
 

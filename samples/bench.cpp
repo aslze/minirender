@@ -80,7 +80,8 @@ int main(int argc, char** argv)
 
 	Renderer renderer;
 
-	renderer.setLight(Vec3(-0.4f, .6f, 1.f));
+	//renderer.setLight(Vec3(-0.4f, .6f, 1.f));
+	renderer.setLight({ 0, 0, 0 }, true);
 	renderer.setScene(scene);
 	renderer.setSize(sizew, sizeh);
 	renderer.setProjection(projectionFrustum(fov, renderer.aspect(), 10, 7000));
