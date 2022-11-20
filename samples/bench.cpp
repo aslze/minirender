@@ -11,7 +11,7 @@ float rf(float z, float s)
 	return 30 + 40 * sin(4 * z * (float)PI / s) / (4 * z * (float)PI / s);
 }
 
-TriMesh* createObject(int m, int n)
+TriMesh* createObject(int m, int n, bool tex = false)
 {
 	TriMesh* mesh = new TriMesh();
 
@@ -30,8 +30,8 @@ TriMesh* createObject(int m, int n)
 			mesh->normals << Vec3(nor.x * cos(j * da), nor.x * sin(j * da), nor.y).normalized();
 
 			if (j > 0 && i > 0)
-				mesh->indices << (n * (i - 1) + j - 1) << (n * (i - 1) + j) << (n * i + j) <<
-								(n * (i - 1) + j - 1) << (n * i + j) << (n * i + j - 1);
+				mesh->indices << (n * (i - 1) + j - 1) << (n * (i - 1) + j) << (n * i + j) << (n * (i - 1) + j - 1)
+				              << (n * i + j) << (n * i + j - 1);
 		}
 	}
 	mesh->normalsI = mesh->indices;
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 {
 	CmdArgs args;
 
-	float d = args["d"] | 700;                  // camera distance
+	float d = args["d"] | 680;                  // camera distance
 	int n = args["n"] | 1;                      // number of frames
 	int sizew = args["w"] | 1920;               // image size (not for console)
 	int sizeh = args["h"] | (sizew * 9 / 16);
@@ -61,14 +61,14 @@ int main(int argc, char** argv)
 
 	Scene* scene = new Scene();
 
-	Random random;
+	Random random(false);
 
 	for (int i = 0; i < 20; i++)
 	{
 		auto shape = createObject(200, 200);
 
 		shape->material->diffuse = { random(1.f), random(1.f) ,random(1.f) };
-		shape->transform = Matrix4::translate(random(-130.f, 130.f), random(-130.f, 130.f), random(-100.f, 100.f)) * Matrix4::rotate({ random(1.f), random(1.f), random(1.f) });
+		shape->transform = Matrix4::translate(random(-180.f, 180.f), random(-180.f, 180.f), random(-100.f, 100.f)) * Matrix4::rotate({ random(1.f), random(1.f), random(1.f) });
 		scene->children << shape;
 	}
 	scene->ambientLight = 0.2f;
@@ -81,6 +81,7 @@ int main(int argc, char** argv)
 	Renderer renderer;
 
 	renderer.setLight(Vec3(-0.4f, .6f, 1.f));
+	//renderer.setLight({ 0, 0, 0 }, true);
 	renderer.setScene(scene);
 	renderer.setSize(sizew, sizeh);
 	renderer.setProjection(projectionFrustum(fov, renderer.aspect(), 10, 7000));
