@@ -82,6 +82,7 @@ void Renderer::setSize(int w, int h)
 	_image.resize(h, w);
 	_depth.resize(h, w);
 	_points.resize(h, w);
+	_pnormals.resize(h, w);
 	clear();
 }
 
@@ -95,6 +96,7 @@ void Renderer::clear()
 	_image.set(_bgcolor);
 	_depth.set(1e11f);
 	_points.set(Vec3(0, 0, 0));
+	_pnormals.set(Vec3(0, 0, 1));
 }
 
 inline Vertex clip(float z, const Vertex& v1, const Vertex& v2)
@@ -274,6 +276,8 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 #endif
 						value += specular * _material->specular;
 					}
+					if (!hasspecular)
+						_pnormals(i, j) = normal;
 				}
 				_image(i, j) = value;
 				_points(i, j) = position;
