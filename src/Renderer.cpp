@@ -75,6 +75,7 @@ Renderer::Renderer()
 	_lighting = true;
 	_texturing = true;
 	_bgcolor = Vec3(0, 0, 0);
+	_lightIsPoint = true;
 }
 
 void Renderer::setSize(int w, int h)
@@ -253,9 +254,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 				if (_lighting)
 				{
-#ifdef POINTLIGHT
-					Vec3 _lightdir = (this->_lightdir - position).normalized();
-#endif
+					Vec3 _lightdir = _lightIsPoint ? (this->_lightdir - position).normalized() : this->_lightdir;
 
 					
 #ifndef FAST_LIGHT
@@ -292,11 +291,10 @@ void Renderer::render()
 	_renderables.clear();
 	_scene->collectShapes(_renderables, Matrix4::identity());
 
-#ifdef POINTLIGHT
-	_lightdir = _view * _light;
-#else
-	_lightdir = _light;
-#endif
+	if (_lightIsPoint)
+		_lightdir = _view * _light;
+	else
+		_lightdir = _light; // this makes the light camera relative!
 
 	_ambient = _scene->ambientLight;
 
