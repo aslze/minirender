@@ -30,7 +30,7 @@ void consolePaint(const asl::Array2<asl::Vec3>& image)
 
 int main(int argc, char* argv[])
 {
-	CmdArgs args;
+	CmdArgs args(argc, argv);
 
 	bool useconsole = args.has("console");      // if given outputs to console
 	bool saving = args.has("save");             // if given saves images as PPM
