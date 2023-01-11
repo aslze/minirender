@@ -60,7 +60,7 @@ TriMesh* createObject(int m, int n, bool usetex, Random& random)
 
 int main(int argc, char** argv)
 {
-	CmdArgs args;
+	CmdArgs args(argc, argv);
 
 	float d = args["d"] | 700;                  // camera distance
 	int n = args["n"] | 1;                      // number of frames
