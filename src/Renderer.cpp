@@ -1,4 +1,5 @@
 #include "minirender/Renderer.h"
+#include <asl/Matrix3.h>
 
 #define PREMULT
 #define FAST_LIGHT
@@ -16,6 +17,24 @@ inline Vec3 operator^(const Matrix4& m, const Vec3& p)
 		iw * (m(0, 0) * p.x + m(0, 1) * p.y + m(0, 2) * p.z + m(0, 3)),
 		iw * (m(1, 0) * p.x + m(1, 1) * p.y + m(1, 2) * p.z + m(1, 3)),
 		iw * (m(2, 0) * p.x + m(2, 1) * p.y + m(2, 2) * p.z + m(2, 3)));
+}
+
+inline Vec3 mix(float k[3], const Vec3 v[3])
+{
+	//float x[4][4] = {
+	//	{ v[0].x, v[0].y, v[0].z, 0 }, { v[1].x, v[1].y, v[1].z, 0 }, { v[2].x, v[2].y, v[2].z, 0 }, { 0, 0, 0, 0 }
+	//};
+	float x[4][4] = {
+			{ v[0].x, v[1].x, v[2].x, 0 }, { v[0].y, v[1].y, v[2].y, 0 }, { v[0].z, v[1].z, v[2].z, 0 }, { 0, 0, 0, 0 }
+		};
+	float y[4] = { 0, 0, 0, 0 };
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+			y[i] += k[j] * x[i][j];
+	}
+
+	return Vec3(y[0], y[1], y[2]);
 }
 
 Matrix4 projectionOrtho(float l, float r, float b, float t, float n, float f)
@@ -162,41 +181,45 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 	Vec3 ndc[3];
 	Vec2 p[3];
+	Vec2 pmin(1e30f, 1e30f);
+	Vec2 pmax(-1e30f, -1e30f);
 
 	for (int i = 0; i < 3; i++)
 	{
 		ndc[i] = _projection ^ vertices[i];
 	}
 
+	Matrix3 topx(w / 2, 0, w / 2, 0, -h / 2, h / 2);
+
 	for (int i = 0; i < 3; i++) // pixel coords
 	{
 		p[i].x = (1 + ndc[i].x) * (w / 2);
 		p[i].y = (1 - ndc[i].y) * (h / 2);
+		//p[i] = topx * ndc[i].xy();
+		pmin = min(pmin, p[i]);
+		pmax = max(pmax, p[i]);
 	}
 
-	float a = (p[0] - p[1]) ^ (p[2] - p[1]) * 0.5f;
+	if (pmax.x < 0 || pmax.y < 0 || pmin.x > w || pmin.y > h)
+		return;
+
+	float a = (p[0] - p[1]) ^ (p[2] - p[1]); // * 0.5f;
 
 	if (a <= 0) // front face
 	{
 		return; // back face cull
 	}
 
-	Vec2 pmin = min(p[0], p[1], p[2]);
-	Vec2 pmax = max(p[0], p[1], p[2]);
-
-	if (pmax.x < 0 || pmax.y < 0 || pmin.x > w || pmin.y > h)
-		return;
-
-	float i2a = (a == 0) ? 0.0f : -1.0f / (2 * a);
+	float i2a = (a == 0) ? 0.0f : -1.0f / (/*2 * */ a);
 
 	//Vec2 n0 = (p[2] - p[1]).perpend() * i2a;
 	Vec2 n1 = (p[0] - p[2]).perpend() * i2a;
 	Vec2 n2 = (p[1] - p[0]).perpend() * i2a;
 
-	pmin.x = (float)clamp((float)pmin.x, 0.f, w - 1);
-	pmax.x = (float)clamp((float)pmax.x, 0.f, w - 1);
-	pmin.y = (float)clamp((float)pmin.y, 0.f, h - 1);
-	pmax.y = (float)clamp((float)pmax.y, 0.f, h - 1);
+	pmin.x = clamp(pmin.x, 0.f, w - 1);
+	pmax.x = clamp(pmax.x, 0.f, w - 1);
+	pmin.y = clamp(pmin.y, 0.f, h - 1);
+	pmax.y = clamp(pmax.y, 0.f, h - 1);
 
 	float zz[4] = { ndc[0].z, ndc[1].z, ndc[2].z, 1 };
 	float iz[4] = { 1 / -vertices[0].z, 1 / -vertices[1].z, 1 / -vertices[2].z, 1 };
@@ -242,6 +265,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 			{
 				pixdepth = z;
 
+				//Vec3 position = mix(k, vertices);
 				Vec3 position = k[0] * vertices[0] + k[1] * vertices[1] + k[2] * vertices[2];
 
 				if (hastexture)
@@ -255,7 +279,6 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 				if (_lighting)
 				{
 					Vec3 _lightdir = _lightIsPoint ? (this->_lightdir - position).normalized() : this->_lightdir;
-
 					
 #ifndef FAST_LIGHT
 					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
@@ -267,16 +290,16 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 					if (hasspecular)
 					{
-						Vec3 viewDir = -position.normalized();
+						Vec3 viewDir = position.normalized();
 #ifndef FAST_LIGHT
-						float specular = pow(max((_lightdir + viewDir).normalized() * normal, 0.0f), _material->shininess);
+						float specular = pow(max((_lightdir - viewDir).normalized() * normal, 0.0f), _material->shininess);
 #else
-						float specular = pow(max((_lightdir + viewDir) * normal, 0.0f) / ((_lightdir + viewDir).length()* normal.length()), _material->shininess);
+						float specular = pow(max((_lightdir - viewDir) * normal, 0.0f) / ((_lightdir - viewDir).length() * normal.length()), _material->shininess);
 #endif
 						value += specular * _material->specular;
 					}
-					if (!hasspecular)
-						_pnormals(i, j) = normal;
+					//if (!hasspecular)
+					_pnormals(i, j) = normal;
 				}
 				_image(i, j) = value;
 				_points(i, j) = position;
