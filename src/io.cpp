@@ -269,7 +269,7 @@ SceneNode* loadOBJ(const asl::String& filename)
 
 	for (auto mat : materials)
 	{
-		if (mat.value->textureName)
+		if (mat.value->textureName.ok())
 		{
 			mat.value->texture = loadPPM(Path(filename).directory() + "/" + mat.value->textureName);
 		}

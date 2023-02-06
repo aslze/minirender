@@ -10,7 +10,7 @@ using namespace asl;
 namespace minirender {
 
 
-inline Vec3 operator^(const Matrix4& m, const Vec3& p)
+inline Vec3 htransform(const Matrix4& m, const Vec3& p)
 {
 	float iw = 1/(m(3, 0) * p.x + m(3, 1) * p.y + m(3, 2) * p.z + m(3, 3));
 	return Vec3(
@@ -186,7 +186,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 	for (int i = 0; i < 3; i++)
 	{
-		ndc[i] = _projection ^ vertices[i];
+		ndc[i] = htransform(_projection, vertices[i]);
 	}
 
 	Matrix3 topx(w / 2, 0, w / 2, 0, -h / 2, h / 2);
