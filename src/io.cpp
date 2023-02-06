@@ -138,7 +138,7 @@ TriMesh* loadSTL(const asl::String& filename)
 void saveSTL(TriMesh* mesh, const String& name)
 {
 	asl::File file(name, asl::File::WRITE);
-	file << String(' ', 80);
+	file << String::repeat(' ', 80);
 	file << mesh->indices.length() / 3;
 	StreamBuffer buffer;
 	for (int i = 0; i < mesh->indices.length(); i += 3)
@@ -269,7 +269,7 @@ SceneNode* loadOBJ(const asl::String& filename)
 
 	for (auto mat : materials)
 	{
-		if (mat.value->textureName)
+		if (mat.value->textureName.ok())
 		{
 			mat.value->texture = loadPPM(Path(filename).directory() + "/" + mat.value->textureName);
 		}

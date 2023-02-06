@@ -19,11 +19,15 @@ class Renderer
 	asl::Array2<asl::Vec3> _image;
 	asl::Array2<float> _depth;
 	asl::Array2<asl::Vec3> _points;
+	asl::Array2<asl::Vec3> _pnormals;
+	asl::Array<asl::Vec3> _vertices;
+	asl::Array<asl::Vec3> _normals;
 	asl::Matrix4 _view;
 	asl::Matrix4 _projection;
 	asl::Matrix4 _modelview;
 	asl::Matrix4 _normalmat;
 	asl::Vec3 _lightdir;
+	asl::Vec3 _light;
 	asl::Vec3 _bgcolor;
 	float _ambient;
 	float _znear;
@@ -34,6 +38,7 @@ class Renderer
 	void clipTriangle(float z, Vertex v[3]);
 	bool _lighting;
 	bool _texturing;
+	bool _lightIsPoint;
 public:
 	Renderer();
 	void setSize(int w, int h);
@@ -41,7 +46,7 @@ public:
 	void setScene(Scene* scene);
 	void setProjection(const asl::Matrix4& m) { _projection = m; }
 	void setView(const asl::Matrix4& m) { _view = m; }
-	void setLight(const asl::Vec3& v) { _lightdir = v.normalized(); }
+	void setLight(const asl::Vec3& v, bool point = false) { _light = point? v : v.normalized(); _lightIsPoint = point; }
 	void setMaterial(Material* material) { _material = material; }
 	void setLighting(bool on) { _lighting = on; }
 	void setTexturing(bool on) { _texturing = on; }
