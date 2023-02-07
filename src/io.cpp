@@ -125,11 +125,21 @@ SceneNode* loadMesh(const asl::String& filename)
 
 TriMesh* loadSTL(const asl::String& filename)
 {
-	Array<byte> bytes = asl::File(filename).firstBytes(5);
+	Array<byte> bytes = File(filename).firstBytes(5);
 	if (bytes.length() < 5)
 		return NULL;
 
-	if (String((char*)bytes.ptr(), 5) == "solid")
+	bool binary = false;
+	if (File(filename).size() > 84)
+	{
+		File file(filename, File::READ);
+		file.seek(80);
+		int nf = file.read<int>();
+		if (file.size() == 80 + 4 + nf * 50)
+			binary = true;
+	}
+
+	if (!binary)
 		return loadSTLa(filename);
 	else
 		return loadSTLb(filename);
