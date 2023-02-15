@@ -55,8 +55,9 @@ public:
 	void render();
 	void paintMesh(TriMesh* mesh, const asl::Matrix4& transform = asl::Matrix4::identity());
 	void paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c, bool world = true);
-	asl::Array2<asl::Vec3> getImage();
-	asl::Array2<asl::Vec3> getRangeImage() { return _points; }
+	asl::Array2<asl::Vec3> getImage() const;
+	asl::Array2<asl::Vec3> getRangeImage() const { return _points; }
+	asl::Array2<asl::Vec3> getNormalsImage() const { return _pnormals; }
 };
 
 }

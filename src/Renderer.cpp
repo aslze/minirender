@@ -383,7 +383,7 @@ void Renderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 	}
 }
 
-asl::Array2<asl::Vec3> Renderer::getImage()
+asl::Array2<asl::Vec3> Renderer::getImage() const
 {
 	return _image;
 }
