@@ -94,7 +94,7 @@ Renderer::Renderer()
 	_lighting = true;
 	_texturing = true;
 	_bgcolor = Vec3(0, 0, 0);
-	_lightIsPoint = true;
+	_lightIsPoint = false;
 }
 
 void Renderer::setSize(int w, int h)
@@ -317,20 +317,24 @@ void Renderer::render()
 	if (_lightIsPoint)
 		_lightdir = _view * _light;
 	else
-		_lightdir = _light; // this makes the light camera relative!
+		_lightdir = _light.normalized(); // this makes the light camera relative!
 
 	_ambient = _scene->ambientLight;
 
-	_znear = _projection(3, 2) != 0 ? _projection(2, 3) / (_projection(2, 2) - 1) : (_projection(2, 3) + 1) / _projection(2, 2);
+	bool persp = _projection(3, 3) == 0;
+	_znear = persp ? _projection(2, 3) / (_projection(2, 2) - 1) : (_projection(2, 3) + 1) / _projection(2, 2);
+	float zfar = persp ? _projection(2, 3) / (_projection(2, 2) + 1) : (_projection(2, 3) - 1) / _projection(2, 2);
 
 	for (auto& item : _renderables)
 	{
 		paintMesh(item.mesh, item.transform);
 	}
 
+	float fardepth = persp ? zfar : 1.0f;
+
 	for (int i = 0; i < _depth.rows(); i++)
 		for (int j = 0; j < _depth.cols(); j++)
-			if (_depth(i, j) > 1.0f)
+			if (_depth(i, j) > fardepth)
 				_points(i, j) = Vec3(0, 0, 0);
 }
 
