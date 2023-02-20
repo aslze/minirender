@@ -7,6 +7,7 @@ set(SRC
 	Scene.cpp
 	Renderer.cpp
 	io.cpp
+	x3d.cpp
 )
 
 add_library(${TARGET} STATIC ${SRC})
