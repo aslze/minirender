@@ -30,7 +30,11 @@ void consolePaint(const asl::Array2<asl::Vec3>& image)
 
 int main(int argc, char* argv[])
 {
+#ifdef _WIN32
+	CmdArgs args;
+#else
 	CmdArgs args(argc, argv);
+#endif
 
 	bool useconsole = args.has("console");      // if given outputs to console
 	bool saving = args.has("save");             // if given saves images as PPM
@@ -90,7 +94,10 @@ int main(int argc, char* argv[])
 	auto shape = loadMesh(args[0]);
 
 	if (!shape)
+	{
+		printf("Cannot load model\n");
 		return 1;
+	}
 
 	double t2 = now();
 

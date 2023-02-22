@@ -112,6 +112,8 @@ SceneNode* loadMesh(const asl::String& filename)
 	if (Path(filename).hasExtension("stl"))
 	{
 		TriMesh* mesh = loadSTL(filename);
+		if (!mesh)
+			return mesh;
 		SceneNode* node = new SceneNode;
 		node->children << mesh;
 		return node;
