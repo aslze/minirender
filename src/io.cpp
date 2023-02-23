@@ -6,7 +6,9 @@
 
 using namespace asl;
 
-namespace minirender {
+namespace minirender
+{
+SceneNode* loadX3D(const asl::String& filename);
 
 TriMesh* loadSTLa(const asl::String& filename)
 {
@@ -26,9 +28,7 @@ TriMesh* loadSTLa(const asl::String& filename)
 	while (!file.end())
 	{
 		file >> tag;
-		if (tag == "facet")
-		{
-		}
+		if (tag == "facet") {}
 		else if (tag == "endfacet")
 		{
 			if (np == 3)
@@ -41,14 +41,14 @@ TriMesh* loadSTLa(const asl::String& filename)
 		else if (tag == "normal")
 		{
 			Array<float> a = file.readLine().split_<float>();
-			Vec3 v(a[0], a[1], a[2]);
+			Vec3         v(a[0], a[1], a[2]);
 			obj->normals << v;
 			indexn++;
 		}
 		else if (tag == "vertex")
 		{
 			Array<float> a = file.readLine().split_<float>();
-			Vec3 v(a[0], a[1], a[2]);
+			Vec3         v(a[0], a[1], a[2]);
 			obj->vertices << v;
 			np++;
 			indexv++;
@@ -56,7 +56,6 @@ TriMesh* loadSTLa(const asl::String& filename)
 	}
 	return obj;
 }
-
 
 TriMesh* loadSTLb(const String& filename)
 {
@@ -82,7 +81,7 @@ TriMesh* loadSTLb(const String& filename)
 	obj->indices.reserve(nf * 3);
 	obj->normalsI.reserve(nf * 3);
 
-	asl::Vec3 v;
+	Vec3 v;
 
 	int indexn = 0, indexv = 0;
 	for (int i = 0; i < nf; i++, indexn++)
@@ -122,6 +121,10 @@ SceneNode* loadMesh(const asl::String& filename)
 	{
 		return loadOBJ(filename);
 	}
+	else if (Path(filename).hasExtension("x3d"))
+	{
+		return loadX3D(filename);
+	}
 	return new SceneNode;
 }
 
@@ -149,15 +152,15 @@ TriMesh* loadSTL(const asl::String& filename)
 
 void saveSTL(TriMesh* mesh, const String& name)
 {
-	asl::File file(name, asl::File::WRITE);
+	File file(name, File::WRITE);
 	file << String::repeat(' ', 80);
 	file << mesh->indices.length() / 3;
 	StreamBuffer buffer;
 	for (int i = 0; i < mesh->indices.length(); i += 3)
 	{
-		Vec3 a = mesh->vertices[mesh->indices[i]],
-			b = mesh->vertices[mesh->indices[i + 1]],
-			c = mesh->vertices[mesh->indices[i + 2]];
+		Vec3 a = mesh->vertices[mesh->indices[i]],    //
+		    b = mesh->vertices[mesh->indices[i + 1]], //
+		    c = mesh->vertices[mesh->indices[i + 2]];
 		Vec3 n = ((c - a) ^ (b - a)).normalized();
 		buffer << n.x << n.y << n.z;
 		buffer << a.x << a.y << a.z;
@@ -183,7 +186,7 @@ SceneNode* loadOBJ(const asl::String& filename)
 
 	TriMesh* mesh = new TriMesh();
 
-	Dic<TriMesh*> meshes;
+	Dic<TriMesh*>  meshes;
 	Dic<Material*> materials;
 
 	materials[""] = new Material;
@@ -198,8 +201,8 @@ SceneNode* loadOBJ(const asl::String& filename)
 
 	mesh->material = materials[""];
 
-	asl::Array<String> indices;
-	String line;
+	Array<String> indices;
+	String        line;
 
 	while (!file.end())
 	{
@@ -246,7 +249,7 @@ SceneNode* loadOBJ(const asl::String& filename)
 		}
 		else if (parts[0] == "mtllib")
 		{
-			TextFile matfile(Path(filename).directory() + "/" + parts[1], File::READ);
+			TextFile  matfile(Path(filename).directory() + "/" + parts[1], File::READ);
 			Material* mat = materials[""];
 			for (auto line : matfile.lines())
 			{
@@ -299,9 +302,7 @@ SceneNode* loadOBJ(const asl::String& filename)
 	return node;
 }
 
-
-
-void savePPM(const asl::Array2<asl::Vec3>& image, const asl::String& filename)
+void savePPM(const Array2<Vec3>& image, const String& filename)
 {
 	File file;
 	if (filename != "--")
@@ -326,16 +327,18 @@ void savePPM(const asl::Array2<asl::Vec3>& image, const asl::String& filename)
 	}
 }
 
-asl::Array2<asl::Vec3> loadPPM(const asl::String& filename)
+Array2<Vec3> loadPPM(const String& filename)
 {
-	asl::Array2<asl::Vec3> image;
+	Array2<Vec3> image;
+
 	File file(filename, File::READ);
 	if (!file)
 		return image;
 	String header;
-	int nl = 0;
-	bool comment = false;
-	do {
+	int    nl = 0;
+	bool   comment = false;
+	do
+	{
 		char c = file.read<char>();
 		if (c == '\n')
 		{
@@ -374,7 +377,7 @@ asl::Array2<asl::Vec3> loadPPM(const asl::String& filename)
 	return image;
 }
 
-void saveXYZ(const asl::Array2<asl::Vec3>& points, const asl::String& filename)
+void saveXYZ(const Array2<Vec3>& points, const String& filename)
 {
 	TextFile file(filename, File::WRITE);
 

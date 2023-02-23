@@ -8,6 +8,24 @@ using namespace asl;
 
 namespace minirender
 {
+Array<int> triangulateIndices(const Array<int>& indices)
+{
+	Array<int> tris;
+	tris.reserve(indices.length());
+	int i = 0, j = 0;
+	while (i < indices.length())
+	{
+		for (j = i + 1; j < indices.length() - 1; j++)
+		{
+			if (indices[j] == -1 || indices[j + 1] == -1)
+				break;
+			tris << indices[i] << indices[j] << indices[j + 1];
+		}
+		i = j + 2;
+	}
+	return tris;
+}
+
 SceneNode* getSceneItem(Xml& e)
 {
 	SceneNode* node;
@@ -27,6 +45,8 @@ SceneNode* getSceneItem(Xml& e)
 			if (n)
 				node->children << n;
 		}
+
+		return node;
 	}
 	else if (e.tag() == "Shape")
 	{
@@ -43,59 +63,59 @@ SceneNode* getSceneItem(Xml& e)
 			//
 		}
 
-		if (Xml g = e("IndexedFaceSet")) // unify with IndexedTriangleSet
+		Xml ifs = e("IndexedFaceSet");
+		Xml its = e("IndexedTriangleSet");
+
+		if (Xml g = ifs ? ifs : its)
 		{
-			Array<float> verts = g("Coordinate")["point"].split();
-			Array<float> normals = g("Normal")["vector"].split();
-			Array<float> uvs = g("TextureCoordinate")["point"].split();
+			Array<float> verts = g("Coordinate")["point"].split_<float>(); // TODO remove ',' !
+			Array<float> normals = g("Normal")["vector"].split_<float>();
+			Array<float> uvs = g("TextureCoordinate")["point"].split_<float>();
+
+			mesh->vertices.reserve(verts.length() / 3);
+			mesh->normals.reserve(normals.length() / 3);
+			mesh->texcoords.reserve(uvs.length() / 2);
 
 			for (int i = 0; i < verts.length(); i += 3)
-			{
 				mesh->vertices << Vec3(verts[i], verts[i + 1], verts[i + 2]);
-			}
+
 			for (int i = 0; i < normals.length(); i += 3)
-			{
 				mesh->normals << Vec3(normals[i], normals[i + 1], normals[i + 2]);
-			}
 
 			for (int i = 0; i < uvs.length(); i += 2)
-			{
 				mesh->texcoords << Vec2(uvs[i], uvs[i + 1]);
+
+			if (ifs)
+			{
+				mesh->indices = g["coordIndex"].split_<int>();
+				mesh->texcoordsI = g["texCoordIndex"].split();
+				mesh->normalsI = g["normalIndex"].split();
+
+				mesh->indices = triangulateIndices(mesh->indices);
+				mesh->texcoordsI = !mesh->texcoordsI ? mesh->indices.clone() : triangulateIndices(mesh->texcoordsI);
+				mesh->normalsI = !mesh->normalsI ? mesh->indices.clone() : triangulateIndices(mesh->normalsI);
+			}
+			else
+			{
+				mesh->indices = g["index"].split_<int>();
+				mesh->texcoordsI = mesh->indices.clone();
+				mesh->normalsI = mesh->indices.clone();
 			}
 
-			mesh->indices = e["coordIndex"].split();
-			mesh->texcoordsI = e["texCoordIndex"].split();
-			mesh->normalsI = e["normalIndex"].split();
-
-			// IndexedTriangleSet only has "index", same for all
-
-			// rearrange indices, texcoordsI, normalsI to form triangles
-			// a b c d -1 -> a b c c d a
-
-			if (!mesh->texcoordsI)
-				mesh->texcoordsI = mesh->indices.clone();
-
-			if (!mesh->normalsI)
-				mesh->normalsI = mesh->indices.clone();
-
-			if (!mesh->normals)
+			if (!mesh->normals) // TODO Compute
 			{
-				mesh->normals << Vec3(1, 0, 0);
+				mesh->normals << Vec3(0, 0, 1);
 				mesh->normalsI.clear();
-				for (int i = 0; i < mesh->indices.length(); i += 4)
-				{
-					mesh->normalsI << 0 << 0 << 0 << -1;
-				}
+				for (int i = 0; i < mesh->indices.length(); i += 3)
+					mesh->normalsI << 0 << 0 << 0;
 			}
 
 			if (!mesh->texcoords)
 			{
 				mesh->texcoords << Vec2(0, 0);
 				mesh->texcoordsI.clear();
-				for (int i = 0; i < mesh->indices.length(); i += 4)
-				{
-					mesh->texcoordsI << 0 << 0 << 0 << -1;
-				}
+				for (int i = 0; i < mesh->indices.length(); i += 3)
+					mesh->texcoordsI << 0 << 0 << 0;
 			}
 		}
 
@@ -108,6 +128,7 @@ SceneNode* getSceneItem(Xml& e)
 SceneNode* loadX3D(const asl::String& filename)
 {
 	Xml x3d = Xml::read(filename);
+
 	if (!x3d || x3d.tag() != "X3D")
 		return NULL;
 
@@ -116,29 +137,23 @@ SceneNode* loadX3D(const asl::String& filename)
 	if (!scene)
 		return NULL;
 
-	TriMesh* mesh = new TriMesh();
+	SceneNode* mesh = new SceneNode();
 
 	Dic<TriMesh*>  meshes;
 	Dic<Material*> materials;
 
 	materials[""] = new Material;
-	meshes[""] = mesh;
-
-	// one mesh per material
-	// all meshes will share vertices, normals and texcoords
-
-	Array<Vec3> vertices;
-	Array<Vec3> normals;
-	Array<Vec2> texcoords;
+	// meshes[""] = mesh;
 
 	for (auto& e : scene.children())
 	{
 		auto node = getSceneItem(e);
 
-		// add to children
+		if (node)
+			mesh->children << node;
 	}
 
-	mesh->material = materials[""];
+	// mesh->material = materials[""];
 
 	return mesh;
 }
