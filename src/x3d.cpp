@@ -8,6 +8,13 @@ using namespace asl;
 
 namespace minirender
 {
+
+inline Vec3 toVec3(const String& s)
+{
+	auto a = s.split_<float>().resize(3);
+	return Vec3(a[0], a[1], a[2]);
+}
+
 Array<int> triangulateIndices(const Array<int>& indices)
 {
 	Array<int> tris;
@@ -53,9 +60,14 @@ SceneNode* getSceneItem(Xml& e)
 		TriMesh* mesh = new TriMesh;
 		auto     appx = e("Appearance");
 
+		mesh->material = new Material;
+
 		if (Xml mat = appx("Material"))
 		{
-			//
+			mesh->material->diffuse = toVec3(mat["diffuseColor"]);
+			mesh->material->specular = toVec3(mat["specularColor"]);
+			mesh->material->emissive = toVec3(mat["emissiveColor"]);
+			mesh->material->shininess = float(mat["shininess"] | "0.5") * 10;
 		}
 
 		if (Xml tex = appx("ImageTexture"))
@@ -102,20 +114,24 @@ SceneNode* getSceneItem(Xml& e)
 				mesh->normalsI = mesh->indices.clone();
 			}
 
-			if (!mesh->normals) // TODO Compute
+			if (!mesh->normals)
 			{
-				mesh->normals << Vec3(0, 0, 1);
 				mesh->normalsI.clear();
-				for (int i = 0; i < mesh->indices.length(); i += 3)
-					mesh->normalsI << 0 << 0 << 0;
+				for (int i = 0, j = 0; i < mesh->indices.length(); i += 3, j++)
+				{
+					Vec3 a = mesh->vertices[mesh->indices[i]];
+					Vec3 b = mesh->vertices[mesh->indices[i+1]];
+					Vec3 c = mesh->vertices[mesh->indices[i+2]];
+					Vec3 n = ((b - a) ^ (c - a)).normalized();
+					mesh->normals << n;
+					mesh->normalsI << j << j << j;
+				}
 			}
 
 			if (!mesh->texcoords)
 			{
 				mesh->texcoords << Vec2(0, 0);
-				mesh->texcoordsI.clear();
-				for (int i = 0; i < mesh->indices.length(); i += 3)
-					mesh->texcoordsI << 0 << 0 << 0;
+				mesh->texcoordsI = Array<int>(mesh->indices.length(), 0);
 			}
 		}
 
@@ -137,25 +153,27 @@ SceneNode* loadX3D(const asl::String& filename)
 	if (!scene)
 		return NULL;
 
-	SceneNode* mesh = new SceneNode();
-
+	SceneNode* root = new SceneNode();
+	
+	/*
 	Dic<TriMesh*>  meshes;
 	Dic<Material*> materials;
-
 	materials[""] = new Material;
-	// meshes[""] = mesh;
+	meshes[""] = mesh;
+	*/
+
+	// first pass: look for DEF/USE: replace USE with copies?
+	// or store meshes/materials in a map and reuse them?
 
 	for (auto& e : scene.children())
 	{
 		auto node = getSceneItem(e);
 
 		if (node)
-			mesh->children << node;
+			root->children << node;
 	}
 
-	// mesh->material = materials[""];
-
-	return mesh;
+	return root;
 }
 
 }
