@@ -12,7 +12,7 @@ SceneNode::SceneNode()
 
 void SceneNode::collectShapes(Array<Renderable>& list, const asl::Matrix4& xform)
 {
-	auto tr = transform * xform;
+	auto tr = xform * transform;
 	for (auto& node : children)
 	{
 		node->collectShapes(list, tr);
@@ -29,7 +29,7 @@ BBox SceneNode::getBbox(const asl::Matrix4& xform) const
 
 void TriMesh::collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform)
 {
-	auto tr = transform * xform;
+	auto tr = xform * transform;
 	list << Renderable(this, tr);
 	for (auto& node : children)
 		node->collectShapes(list, tr);
