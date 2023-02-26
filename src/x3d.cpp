@@ -8,7 +8,6 @@ using namespace asl;
 
 namespace minirender
 {
-
 inline Vec3 toVec3(const String& s)
 {
 	auto a = s.split_<float>().resize(3);
@@ -33,7 +32,16 @@ Array<int> triangulateIndices(const Array<int>& indices)
 	return tris;
 }
 
-SceneNode* getSceneItem(Xml& e, const String& filename)
+struct X3dReader
+{
+	String filename;
+	Xml    x3d;
+
+	SceneNode* getSceneItem(Xml& e);
+	SceneNode* load(const asl::String& filename);
+};
+
+SceneNode* X3dReader::getSceneItem(Xml& e)
 {
 	SceneNode* node;
 	if (e.tag() == "Transform" || e.tag() == "Group")
@@ -48,7 +56,7 @@ SceneNode* getSceneItem(Xml& e, const String& filename)
 
 		for (auto& child : e.children())
 		{
-			auto n = getSceneItem(child, filename);
+			auto n = getSceneItem(child);
 			if (n)
 				node->children << n;
 		}
@@ -125,8 +133,8 @@ SceneNode* getSceneItem(Xml& e, const String& filename)
 				for (int i = 0, j = 0; i < mesh->indices.length(); i += 3, j++)
 				{
 					Vec3 a = mesh->vertices[mesh->indices[i]];
-					Vec3 b = mesh->vertices[mesh->indices[i+1]];
-					Vec3 c = mesh->vertices[mesh->indices[i+2]];
+					Vec3 b = mesh->vertices[mesh->indices[i + 1]];
+					Vec3 c = mesh->vertices[mesh->indices[i + 2]];
 					Vec3 n = ((b - a) ^ (c - a)).normalized();
 					mesh->normals << n;
 					mesh->normalsI << j << j << j;
@@ -146,9 +154,9 @@ SceneNode* getSceneItem(Xml& e, const String& filename)
 	return NULL;
 }
 
-SceneNode* loadX3D(const asl::String& filename)
+SceneNode* X3dReader::load(const asl::String& filename)
 {
-	Xml x3d = Xml::read(filename);
+	x3d = Xml::read(filename);
 
 	if (!x3d || x3d.tag() != "X3D")
 		return NULL;
@@ -159,7 +167,9 @@ SceneNode* loadX3D(const asl::String& filename)
 		return NULL;
 
 	SceneNode* root = new SceneNode();
-	
+
+	this->filename = filename;
+
 	/*
 	Dic<TriMesh*>  meshes;
 	Dic<Material*> materials;
@@ -172,13 +182,18 @@ SceneNode* loadX3D(const asl::String& filename)
 
 	for (auto& e : scene.children())
 	{
-		auto node = getSceneItem(e, filename);
+		auto node = getSceneItem(e);
 
 		if (node)
 			root->children << node;
 	}
 
 	return root;
+}
+
+SceneNode* loadX3D(const asl::String& filename)
+{
+	return X3dReader().load(filename);
 }
 
 }
