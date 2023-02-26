@@ -33,7 +33,7 @@ Array<int> triangulateIndices(const Array<int>& indices)
 	return tris;
 }
 
-SceneNode* getSceneItem(Xml& e)
+SceneNode* getSceneItem(Xml& e, const String& filename)
 {
 	SceneNode* node;
 	if (e.tag() == "Transform" || e.tag() == "Group")
@@ -48,7 +48,7 @@ SceneNode* getSceneItem(Xml& e)
 
 		for (auto& child : e.children())
 		{
-			auto n = getSceneItem(child);
+			auto n = getSceneItem(child, filename);
 			if (n)
 				node->children << n;
 		}
@@ -72,7 +72,12 @@ SceneNode* getSceneItem(Xml& e)
 
 		if (Xml tex = appx("ImageTexture"))
 		{
-			//
+			String path = tex["url"];
+			mesh->material->textureName = Path(path).noExt() + ".ppm";
+			if (mesh->material->textureName.ok())
+			{
+				mesh->material->texture = loadPPM(Path(filename).directory() + "/" + mesh->material->textureName);
+			}
 		}
 
 		Xml ifs = e("IndexedFaceSet");
@@ -95,7 +100,7 @@ SceneNode* getSceneItem(Xml& e)
 				mesh->normals << Vec3(normals[i], normals[i + 1], normals[i + 2]);
 
 			for (int i = 0; i < uvs.length(); i += 2)
-				mesh->texcoords << Vec2(uvs[i], uvs[i + 1]);
+				mesh->texcoords << Vec2(uvs[i], 1 - uvs[i + 1]);
 
 			if (ifs)
 			{
@@ -167,7 +172,7 @@ SceneNode* loadX3D(const asl::String& filename)
 
 	for (auto& e : scene.children())
 	{
-		auto node = getSceneItem(e);
+		auto node = getSceneItem(e, filename);
 
 		if (node)
 			root->children << node;
