@@ -39,6 +39,16 @@ struct X3dReader
 
 	SceneNode* getSceneItem(Xml& e);
 	SceneNode* load(const asl::String& filename);
+	Xml        get(const Xml& item) const
+	{
+		if (item.has("USE"))
+		{
+			String use = item["USE"];
+			return x3d.findOne([=](const Xml& e) { return e["DEF"] == use; });
+		}
+		else
+			return item;
+	}
 };
 
 SceneNode* X3dReader::getSceneItem(Xml& e)
@@ -66,19 +76,19 @@ SceneNode* X3dReader::getSceneItem(Xml& e)
 	else if (e.tag() == "Shape")
 	{
 		TriMesh* mesh = new TriMesh;
-		auto     appx = e("Appearance");
+		auto     appx = get(e("Appearance"));
 
 		mesh->material = new Material;
 
-		if (Xml mat = appx("Material"))
+		if (Xml mat = get(appx("Material")))
 		{
-			mesh->material->diffuse = toVec3(mat["diffuseColor"]);
-			mesh->material->specular = toVec3(mat["specularColor"]);
-			mesh->material->emissive = toVec3(mat["emissiveColor"]);
-			mesh->material->shininess = float(mat["shininess"] | "0.5") * 10;
+			mesh->material->diffuse = toVec3(mat["diffuseColor"] | "0.7 0.75 0.8");
+			mesh->material->specular = toVec3(mat["specularColor"] | "0.4 0.4 0.4");
+			mesh->material->emissive = toVec3(mat["emissiveColor"] | "0 0 0");
+			mesh->material->shininess = float(mat["shininess"] | "0.5") * 8;
 		}
 
-		if (Xml tex = appx("ImageTexture"))
+		if (Xml tex = get(appx("ImageTexture")))
 		{
 			String path = tex["url"];
 			mesh->material->textureName = Path(path).noExt() + ".ppm";
@@ -88,14 +98,14 @@ SceneNode* X3dReader::getSceneItem(Xml& e)
 			}
 		}
 
-		Xml ifs = e("IndexedFaceSet");
-		Xml its = e("IndexedTriangleSet");
+		Xml ifs = get(e("IndexedFaceSet"));
+		Xml its = get(e("IndexedTriangleSet"));
 
 		if (Xml g = ifs ? ifs : its)
 		{
-			Array<float> verts = g("Coordinate")["point"].split_<float>(); // TODO remove ',' !
-			Array<float> normals = g("Normal")["vector"].split_<float>();
-			Array<float> uvs = g("TextureCoordinate")["point"].split_<float>();
+			Array<float> verts = get(g("Coordinate"))["point"].replace(',', ' ').split_<float>();
+			Array<float> normals = get(g("Normal"))["vector"].replace(',', ' ').split_<float>();
+			Array<float> uvs = get(g("TextureCoordinate"))["point"].replace(',', ' ').split_<float>();
 
 			mesh->vertices.reserve(verts.length() / 3);
 			mesh->normals.reserve(normals.length() / 3);
@@ -169,16 +179,6 @@ SceneNode* X3dReader::load(const asl::String& filename)
 	SceneNode* root = new SceneNode();
 
 	this->filename = filename;
-
-	/*
-	Dic<TriMesh*>  meshes;
-	Dic<Material*> materials;
-	materials[""] = new Material;
-	meshes[""] = mesh;
-	*/
-
-	// first pass: look for DEF/USE: replace USE with copies?
-	// or store meshes/materials in a map and reuse them?
 
 	for (auto& e : scene.children())
 	{
