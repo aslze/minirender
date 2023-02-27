@@ -19,15 +19,17 @@ It interpolates normals to produce smooth Blinn-Phong diffuse and specular illum
 * Ability to save images in PPM format (very simple and not needing 3rd party libraries)
 * Triangle clipping at the near plane
 * Textures (PPM only)
-* STL (bin or text) and (partial) OBJ/MTL loaders (now only triangles and must have normals)
+* Loaders for:
+  - STL (binary or text)
+  - OBJ/MTL (must be triangulated and must have normals)
+  - X3D (`IndexedFaceSet` and `IndexedTriangleSet` meshes with scene hierarchy and materials)
 * Simple hierarchical scene with meshes and transforms
-* Only one directional light, in camera space
+* Only one point light in world-coordinates
 
 ## Possible future features
 
 * Additional loader(s) (maybe PLY)
 * Normals computation and polygon triangularization
-* Light position in world coordinates
 * More lights including spots
 
 
