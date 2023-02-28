@@ -309,6 +309,11 @@ void savePPM(const Array2<Vec3>& image, const String& filename)
 		file.open(filename, File::WRITE);
 	else
 		file.use(stdout);
+	if (!file)
+	{
+		printf("Cannot write file '%s'\n", *filename);
+		return;
+	}
 	String header;
 	header << "P6\n" << image.cols() << " " << image.rows() << "\n" << 255 << "\n";
 	file << header;
