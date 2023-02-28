@@ -74,6 +74,7 @@ int main(int argc, char* argv[])
 			" -bgcolor <int,int,int> RGB color of background\n\n"
 			" -console! render to the console\n"
 			" -oldconsole! support old consoles with only 256 colors\n"
+		    " -yup! make Y up (typical in X3D)\n" 
 		);
 		return 0;
 	}
@@ -106,6 +107,8 @@ int main(int argc, char* argv[])
 
 	Scene* scene = new Scene();
 
+	if(args.has("yup"))
+		scene->transform = Matrix4::rotateX(PIf/2);
 	scene->children << shape;
 	scene->ambientLight = 0.2f;
 
@@ -119,9 +122,8 @@ int main(int argc, char* argv[])
 		float dh = max(size.x, size.y) / (2 * tan(fov * sizew / sizeh / 2));
 		float dv = size.z / (2 * tan(fov / 2));
 		d = 1.55f * max(dh, dv);
-		scene->transform = Matrix4::translate(-center);
+		scene->transform = Matrix4::translate(-center) * scene->transform;
 	}
-
 
 	Renderer renderer;
 
