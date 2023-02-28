@@ -162,7 +162,7 @@ SceneNode* X3dReader::getSceneItem(Xml& e)
 	}
 	else if (e.tag() == "Inline")
 	{
-		return load(Path(filename).directory() + "/" + e["url"].replace("'", ""));
+		return load(Path(filename).directory() + "/" + e["url"].replace("\"", ""));
 	}
 
 	return NULL;
