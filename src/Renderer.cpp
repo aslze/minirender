@@ -325,6 +325,8 @@ void Renderer::render()
 	_znear = persp ? _projection(2, 3) / (_projection(2, 2) - 1) : (_projection(2, 3) + 1) / _projection(2, 2);
 	float zfar = persp ? _projection(2, 3) / (_projection(2, 2) + 1) : (_projection(2, 3) - 1) / _projection(2, 2);
 
+	_znear = -_znear;
+
 	for (auto& item : _renderables)
 	{
 		paintMesh(item.mesh, item.transform);
