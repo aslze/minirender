@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 	CmdArgs args(argc, argv);
 
 	float d = args["d"] | 700;                  // camera distance
-	int n = args["n"] | 1;                      // number of frames
+	int n = args["n"] | 10;                     // number of frames
 	int sizew = args["w"] | 1920;               // image size (not for console)
 	int sizeh = args["h"] | (sizew * 9 / 16);
 	float wx = deg2rad(float(args["rx"] | 0));  // angular X speed deg/s
