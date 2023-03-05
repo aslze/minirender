@@ -2,7 +2,7 @@
 
 **A useless software rasterizer for 3D meshes using a z-buffer.**
 
-Only requires the [ASL](https://github.com/aslze/asl) library.
+Only requires the [ASL](https://github.com/aslze/asl) 1.11.3+ library (automatically downloaded and built if needed).
 
 It interpolates normals to produce smooth Blinn-Phong diffuse and specular illumination.
 
