@@ -6,9 +6,12 @@
 
 using namespace asl;
 
+#define OBJ_TRI
+
 namespace minirender
 {
 SceneNode* loadX3D(const asl::String& filename);
+Array<int> triangulateIndices(const Array<int>& indices);
 
 TriMesh* loadSTLa(const asl::String& filename)
 {
@@ -235,6 +238,11 @@ SceneNode* loadOBJ(const asl::String& filename)
 				if (indices.length() > 2)
 					mesh->normalsI << (int)indices[2] - 1;
 			}
+#ifdef OBJ_TRI
+			mesh->indices << -1;
+			mesh->texcoordsI << -1;
+			mesh->normalsI << -1;
+#endif
 		}
 		else if (parts[0] == "usemtl")
 		{
@@ -291,12 +299,33 @@ SceneNode* loadOBJ(const asl::String& filename)
 	}
 
 	SceneNode* node = new SceneNode;
-	for (auto& mesh : meshes)
+	for (auto& e : meshes)
 	{
-		mesh.value->vertices = vertices;
-		mesh.value->normals = normals;
-		mesh.value->texcoords = texcoords;
-		node->children << mesh.value;
+		TriMesh* mesh = e.value;
+#ifdef OBJ_TRI
+		mesh->indices = triangulateIndices(mesh->indices);
+		mesh->texcoordsI = triangulateIndices(mesh->texcoordsI);
+		mesh->normalsI = triangulateIndices(mesh->normalsI);
+#endif
+		mesh->vertices = vertices;
+		mesh->normals = normals;
+		mesh->texcoords = texcoords;
+		if (!mesh->normals)
+		{
+			mesh->normals.dup();
+			mesh->normalsI.clear();
+			for (int i = 0, j = 0; i < mesh->indices.length(); i += 3, j++)
+			{
+				Vec3 a = mesh->vertices[mesh->indices[i]];
+				Vec3 b = mesh->vertices[mesh->indices[i + 1]];
+				Vec3 c = mesh->vertices[mesh->indices[i + 2]];
+				Vec3 n = ((b - a) ^ (c - a)).normalized();
+				mesh->normals << n;
+				mesh->normalsI << j << j << j;
+			}
+		}
+
+		node->children << mesh;
 	}
 
 	return node;
