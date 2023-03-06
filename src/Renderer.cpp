@@ -86,7 +86,7 @@ Renderer::Renderer()
 {
 	setSize(800, 600);
 	_projection = projectionOrtho(-40, 40, -30, 30, 50, 120);
-	_lightdir = Vec3(-0.15f, 0.6f, 1).normalized();
+	_light = Vec3(-0.15f, 0.6f, 1).normalized();
 	_ambient = 0.1f;
 	_defmaterial = new Material();
 	_material = _defmaterial;
