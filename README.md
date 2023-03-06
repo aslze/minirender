@@ -21,7 +21,7 @@ It interpolates normals to produce smooth Blinn-Phong diffuse and specular illum
 * Textures (PPM only)
 * Loaders for:
   - STL (binary or text)
-  - OBJ/MTL (must be triangulated and must have normals)
+  - OBJ/MTL
   - X3D (`IndexedFaceSet` and `IndexedTriangleSet` meshes with scene hierarchy and materials)
 * Simple hierarchical scene with meshes and transforms
 * Only one point light in world-coordinates
@@ -29,7 +29,7 @@ It interpolates normals to produce smooth Blinn-Phong diffuse and specular illum
 ## Possible future features
 
 * Additional loader(s) (maybe PLY)
-* Normals computation and polygon triangularization
+* Normals computation with autosmoothing
 * More lights including spots
 
 
