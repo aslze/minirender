@@ -37,8 +37,8 @@ struct X3dReader
 	String filename;
 	Xml    x3d;
 
-	SceneNode* getSceneItem(Xml& e);
-	SceneNode* load(const asl::String& filename);
+	Shared<SceneNode> getSceneItem(Xml& e);
+	Shared<SceneNode> load(const asl::String& filename);
 	Xml        get(const Xml& item) const
 	{
 		if (item.has("USE"))
@@ -51,9 +51,9 @@ struct X3dReader
 	}
 };
 
-SceneNode* X3dReader::getSceneItem(Xml& e)
+Shared<SceneNode> X3dReader::getSceneItem(Xml& e)
 {
-	SceneNode* node;
+	Shared<SceneNode> node;
 	if (e.tag() == "Transform" || e.tag() == "Group")
 	{
 		auto rotation = (e["rotation"] | "0 0 1 0").split();
@@ -168,7 +168,7 @@ SceneNode* X3dReader::getSceneItem(Xml& e)
 	return NULL;
 }
 
-SceneNode* X3dReader::load(const asl::String& filename)
+Shared<SceneNode> X3dReader::load(const asl::String& filename)
 {
 	x3d = Xml::read(filename);
 
@@ -180,7 +180,7 @@ SceneNode* X3dReader::load(const asl::String& filename)
 	if (!scene)
 		return NULL;
 
-	SceneNode* root = new SceneNode();
+	Shared<SceneNode> root = new SceneNode();
 
 	this->filename = filename;
 
@@ -195,7 +195,7 @@ SceneNode* X3dReader::load(const asl::String& filename)
 	return root;
 }
 
-SceneNode* loadX3D(const asl::String& filename)
+Shared<SceneNode> loadX3D(const asl::String& filename)
 {
 	return X3dReader().load(filename);
 }

@@ -12,11 +12,11 @@ namespace minirender {
 
 inline Vec3 htransform(const Matrix4& m, const Vec3& p)
 {
-	float iw = 1/(m(3, 0) * p.x + m(3, 1) * p.y + m(3, 2) * p.z + m(3, 3));
+	float iw = 1 / (m(3, 0) * p.x + m(3, 1) * p.y + m(3, 2) * p.z + m(3, 3));
 	return Vec3(
-		iw * (m(0, 0) * p.x + m(0, 1) * p.y + m(0, 2) * p.z + m(0, 3)),
-		iw * (m(1, 0) * p.x + m(1, 1) * p.y + m(1, 2) * p.z + m(1, 3)),
-		iw * (m(2, 0) * p.x + m(2, 1) * p.y + m(2, 2) * p.z + m(2, 3)));
+		(m(0, 0) * p.x + m(0, 1) * p.y + m(0, 2) * p.z + m(0, 3)) * iw,
+		(m(1, 0) * p.x + m(1, 1) * p.y + m(1, 2) * p.z + m(1, 3)) * iw,
+		(m(2, 0) * p.x + m(2, 1) * p.y + m(2, 2) * p.z + m(2, 3)) * iw);
 }
 
 inline Vec3 mix(float k[3], const Vec3 v[3])
@@ -172,7 +172,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 		if (vertices[0].z > _znear && vertices[1].z > _znear && vertices[2].z > _znear)
 			return;
 
-		Vertex verts[3] = { Vertex(vertices[0], normals[0], texcoords[0]), Vertex(vertices[1], normals[1], texcoords[1]), Vertex(vertices[2], normals[2], texcoords[2]) };
+		Vertex verts[3] = { v0, v1, v2 };
 		clipTriangle(_znear, verts);
 		return;
 	}
@@ -203,14 +203,14 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	if (pmax.x < 0 || pmax.y < 0 || pmin.x > w || pmin.y > h)
 		return;
 
-	float a = (p[0] - p[1]) ^ (p[2] - p[1]); // * 0.5f;
+	float a = (p[0] - p[1]) ^ (p[2] - p[1]);
 
 	if (a <= 0) // front face
 	{
 		return; // back face cull
 	}
 
-	float i2a = (a == 0) ? 0.0f : -1.0f / (/*2 * */ a);
+	float i2a = (a == 0) ? 0.0f : -1.0f / a;		
 
 	//Vec2 n0 = (p[2] - p[1]).perpend() * i2a;
 	Vec2 n1 = (p[0] - p[2]).perpend() * i2a;
@@ -222,7 +222,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	pmax.y = clamp(pmax.y, 0.f, h - 1);
 
 	float zz[4] = { ndc[0].z, ndc[1].z, ndc[2].z, 1 };
-	float iz[4] = { 1 / -vertices[0].z, 1 / -vertices[1].z, 1 / -vertices[2].z, 1 };
+	float iz[4] = { -1 / vertices[0].z, -1 / vertices[1].z, -1 / vertices[2].z, 1 };
 
 	bool persp = _projection(3, 3) == 0;
 	bool hasspecular = _material->shininess != 0;
@@ -232,16 +232,16 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 	float k[4] = { 0, 0, 0, 0 };
 
-	for (float y = floor(pmin.y); y <= pmax.y; y++)
+	for (float y = floor(pmin.y) + 0.5f; y <= pmax.y + 0.5f; y++)
 	{
-		Vec2 pt(floor(pmin.x), y);
+		Vec2 pt(floor(pmin.x) + 0.5f, y);
 		float e1 = n1 * (pt - p[2]);
 		float e2 = n2 * (pt - p[0]);
-		for (float x = floor(pmin.x); x <= pmax.x; x++, e1 += n1.x, e2 += n2.x)
+		for (float x = pt.x; x <= pmax.x + 0.5f; x++, e1 += n1.x, e2 += n2.x)
 		{
 			if (e1 < 0 || e2 < 0 || 1 - e1 - e2 < 0)
 				continue;
-			k[0] = 1 - e1 - e2;
+			k[0] = 1.f - e1 - e2;
 			k[1] = e1;
 			k[2] = e2;
 
@@ -249,10 +249,10 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 			if (persp)
 			{
-				z = 1 / (k[0] * iz[0] + k[1] * iz[1] + k[2] * iz[2]);
-				k[0] *= z * iz[0];
-				k[1] *= z * iz[1];
-				k[2] *= z * iz[2];
+				z = 1.f / (k[0] * iz[0] + k[1] * iz[1] + k[2] * iz[2]);
+				k[0] *= iz[0] * z;
+				k[1] *= iz[1] * z;
+				k[2] *= iz[2] * z;
 			}
 			else
 				z = k[0] * zz[0] + k[1] * zz[1] + k[2] * zz[2] + k[3] * zz[3];
@@ -265,9 +265,6 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 			{
 				pixdepth = z;
 
-				//Vec3 position = mix(k, vertices);
-				Vec3 position = k[0] * vertices[0] + k[1] * vertices[1] + k[2] * vertices[2];
-
 				if (hastexture)
 				{
 					Vec2 uv = k[0] * texcoords[0] + k[1] * texcoords[1] + k[2] * texcoords[2];
@@ -278,31 +275,30 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 				if (_lighting)
 				{
-					Vec3 _lightdir = _lightIsPoint ? (this->_lightdir - position).normalized() : this->_lightdir;
+					Vec3 position = k[0] * vertices[0] + k[1] * vertices[1] + k[2] * vertices[2];
+					Vec3 lightdir = _lightIsPoint ? (_lightdir - position).normalized() : _lightdir;
 					
 #ifndef FAST_LIGHT
 					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
-					value += (max(0.0f, normal * _lightdir) + _ambient) * color;
+					value += (max(0.0f, normal * lightdir) + _ambient) * color;
 #else
 					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]);
-					value += (max(0.0f, normal * _lightdir)/normal.length() + _ambient) * color;
+					value += (max(0.0f, normal * lightdir)/normal.length() + _ambient) * color;
 #endif
 
 					if (hasspecular)
 					{
 						Vec3 viewDir = position.normalized();
 #ifndef FAST_LIGHT
-						float specular = pow(max((_lightdir - viewDir).normalized() * normal, 0.0f), _material->shininess);
+						float specular = pow(max((lightdir - viewDir).normalized() * normal, 0.0f), _material->shininess);
 #else
-						float specular = pow(max((_lightdir - viewDir) * normal, 0.0f) / ((_lightdir - viewDir).length() * normal.length()), _material->shininess);
+						float specular = pow(max((lightdir - viewDir) * normal, 0.0f) / ((lightdir - viewDir).length() * normal.length()), _material->shininess);
 #endif
 						value += specular * _material->specular;
 					}
-					//if (!hasspecular)
 					_pnormals(i, j) = normal;
 				}
 				_image(i, j) = value;
-				_points(i, j) = position;
 			}
 		}
 	}
@@ -323,21 +319,12 @@ void Renderer::render()
 
 	bool persp = _projection(3, 3) == 0;
 	_znear = persp ? _projection(2, 3) / (_projection(2, 2) - 1) : (_projection(2, 3) + 1) / _projection(2, 2);
-	float zfar = persp ? _projection(2, 3) / (_projection(2, 2) + 1) : (_projection(2, 3) - 1) / _projection(2, 2);
-
 	_znear = -_znear;
 
 	for (auto& item : _renderables)
 	{
 		paintMesh(item.mesh, item.transform);
 	}
-
-	float fardepth = persp ? zfar : 1.0f;
-
-	for (int i = 0; i < _depth.rows(); i++)
-		for (int j = 0; j < _depth.cols(); j++)
-			if (_depth(i, j) > fardepth)
-				_points(i, j) = Vec3(0, 0, 0);
 }
 
 void Renderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
@@ -392,6 +379,32 @@ void Renderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 asl::Array2<asl::Vec3> Renderer::getImage() const
 {
 	return _image;
+}
+
+asl::Array2<asl::Vec3> Renderer::getRangeImage()
+{
+	bool persp = _projection(3, 3) == 0;
+	float zfar = persp ? _projection(2, 3) / (_projection(2, 2) + 1) : (_projection(2, 3) - 1) / _projection(2, 2);
+	float fardepth = persp ? zfar : 1.0f;
+	float neardepth = persp ? _znear : -1.0f;
+
+	for (int i = 0; i < _depth.rows(); i++)
+		for (int j = 0; j < _depth.cols(); j++)
+		{
+			if (_depth(i, j) > fardepth)
+				_points(i, j) = Vec3(0, 0, 0);
+			else
+			{
+				float u = (j + 0.5f) / (_image.cols() / 2.f) - 1;
+				float v = -(i + 0.5f) / (_image.rows() / 2.f) + 1;
+				float z = -_depth(i, j);
+				float x = -(u + _projection(0, 2)) * z / _projection(0, 0);
+				float y = -(v + _projection(1, 2)) * z / _projection(1, 1);
+				_points(i, j) = Vec3(x, y, z);
+			}
+		}
+
+	return _points;
 }
 
 }

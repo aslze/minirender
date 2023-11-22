@@ -10,10 +10,10 @@ using namespace asl;
 
 namespace minirender
 {
-SceneNode* loadX3D(const asl::String& filename);
+Shared<SceneNode> loadX3D(const asl::String& filename);
 Array<int> triangulateIndices(const Array<int>& indices);
 
-TriMesh* loadSTLa(const asl::String& filename)
+Shared<TriMesh> loadSTLa(const asl::String& filename)
 {
 	TextFile file(filename, File::READ);
 	if (!file)
@@ -24,7 +24,7 @@ TriMesh* loadSTLa(const asl::String& filename)
 	if (tag != "solid")
 		return NULL;
 
-	TriMesh* obj = new TriMesh();
+	Shared<TriMesh> obj = new TriMesh();
 
 	int np = 0, indexv = 0, indexn = 0;
 
@@ -60,7 +60,7 @@ TriMesh* loadSTLa(const asl::String& filename)
 	return obj;
 }
 
-TriMesh* loadSTLb(const String& filename)
+Shared<TriMesh> loadSTLb(const String& filename)
 {
 	File file(filename, File::READ);
 	if (!file)
@@ -75,7 +75,7 @@ TriMesh* loadSTLb(const String& filename)
 	if (nf > 100000000)
 		return NULL;
 
-	TriMesh* obj = new TriMesh();
+	Shared<TriMesh> obj = new TriMesh();
 
 	Array<byte> data(3 * sizeof(float) + 3 * 3 * sizeof(float) + 2);
 
@@ -109,14 +109,14 @@ TriMesh* loadSTLb(const String& filename)
 	return obj;
 }
 
-SceneNode* loadMesh(const asl::String& filename)
+Shared<SceneNode> loadMesh(const asl::String& filename)
 {
 	if (Path(filename).hasExtension("stl"))
 	{
-		TriMesh* mesh = loadSTL(filename);
+		Shared<TriMesh> mesh = loadSTL(filename);
 		if (!mesh)
 			return mesh;
-		SceneNode* node = new SceneNode;
+		Shared<SceneNode> node = new SceneNode;
 		node->children << mesh;
 		return node;
 	}
@@ -131,7 +131,7 @@ SceneNode* loadMesh(const asl::String& filename)
 	return new SceneNode;
 }
 
-TriMesh* loadSTL(const asl::String& filename)
+Shared<TriMesh> loadSTL(const asl::String& filename)
 {
 	Array<byte> bytes = File(filename).firstBytes(5);
 	if (bytes.length() < 5)
@@ -153,7 +153,7 @@ TriMesh* loadSTL(const asl::String& filename)
 		return loadSTLb(filename);
 }
 
-void saveSTL(TriMesh* mesh, const String& name)
+void saveSTL(Shared<TriMesh> mesh, const String& name)
 {
 	File file(name, File::WRITE);
 	file << String::repeat(' ', 80);
@@ -181,16 +181,16 @@ void saveSTL(TriMesh* mesh, const String& name)
 
 // Still only supports OBJs with normals, and with only triangles
 
-SceneNode* loadOBJ(const asl::String& filename)
+Shared<SceneNode> loadOBJ(const asl::String& filename)
 {
 	TextFile file(filename, File::READ);
 	if (!file)
 		return NULL;
 
-	TriMesh* mesh = new TriMesh();
+	Shared<TriMesh> mesh = new TriMesh();
 
-	Dic<TriMesh*>  meshes;
-	Dic<Material*> materials;
+	Dic<Shared<TriMesh>> meshes;
+	Dic<Shared<Material>> materials;
 
 	materials[""] = new Material;
 	meshes[""] = mesh;
@@ -258,7 +258,7 @@ SceneNode* loadOBJ(const asl::String& filename)
 		else if (parts[0] == "mtllib")
 		{
 			TextFile  matfile(Path(filename).directory() + "/" + parts[1], File::READ);
-			Material* mat = materials[""];
+			Shared<Material> mat = materials[""];
 			for (auto line : matfile.lines())
 			{
 				Array<String> parts = line.split();
@@ -298,7 +298,7 @@ SceneNode* loadOBJ(const asl::String& filename)
 		}
 	}
 
-	SceneNode* node = new SceneNode;
+	Shared<SceneNode> node = new SceneNode;
 	for (auto& e : meshes)
 	{
 		TriMesh* mesh = e.value;
@@ -411,7 +411,7 @@ Array2<Vec3> loadPPM(const String& filename)
 	return image;
 }
 
-void saveXYZ(const Array2<Vec3>& points, const String& filename)
+void saveXYZ(const Array2<Vec3>& points, const String& filename, const asl::Matrix4& m)
 {
 	TextFile file(filename, File::WRITE);
 
@@ -420,7 +420,10 @@ void saveXYZ(const Array2<Vec3>& points, const String& filename)
 		{
 			Vec3 p = points(i, j);
 			if (p.z < -1e-5f)
+			{
+				p = m * p;
 				file.printf("%f %f %f\n", p.x, p.y, p.z);
+			}
 		}
 }
 

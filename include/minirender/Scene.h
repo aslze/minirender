@@ -7,6 +7,7 @@
 #include <asl/Array.h>
 #include <asl/Array2.h>
 #include <asl/String.h>
+#include <asl/Pointer.h>
 
 namespace minirender {
 
@@ -55,7 +56,7 @@ struct SceneNode
 {
 	bool visible;
 	asl::Matrix4 transform;
-	asl::Array<SceneNode*> children;
+	asl::Array<asl::Shared<SceneNode>> children;
 	SceneNode();
 	virtual ~SceneNode() {}
 	virtual void collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform);
@@ -64,7 +65,7 @@ struct SceneNode
 
 struct Shape : public SceneNode
 {
-	Material* material;
+	asl::Shared<Material> material;
 	virtual ~Shape() {}
 };
 

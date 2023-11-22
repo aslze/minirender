@@ -31,9 +31,9 @@ class Renderer
 	asl::Vec3 _bgcolor;
 	float _ambient;
 	float _znear;
-	Scene* _scene;
-	Material* _material;
-	Material* _defmaterial;
+	asl::Shared<Scene>     _scene;
+	asl::Shared<Material>  _material;
+	asl::Shared<Material>  _defmaterial;
 	asl::Array<Renderable> _renderables;
 	void clipTriangle(float z, Vertex v[3]);
 	bool _lighting;
@@ -47,7 +47,7 @@ public:
 	void setProjection(const asl::Matrix4& m) { _projection = m; }
 	void setView(const asl::Matrix4& m) { _view = m; }
 	void setLight(const asl::Vec3& v, bool point = false) { _light = v; _lightIsPoint = point; }
-	void setMaterial(Material* material) { _material = material; }
+	void setMaterial(asl::Shared<Material> material) { _material = material; }
 	void setLighting(bool on) { _lighting = on; }
 	void setTexturing(bool on) { _texturing = on; }
 	void setBackground(const asl::Vec3& color) { _bgcolor = color; }
@@ -56,7 +56,7 @@ public:
 	void paintMesh(TriMesh* mesh, const asl::Matrix4& transform = asl::Matrix4::identity());
 	void paintTriangle(const Vertex& a, const Vertex& b, const Vertex& c, bool world = true);
 	asl::Array2<asl::Vec3> getImage() const;
-	asl::Array2<asl::Vec3> getRangeImage() const { return _points; }
+	asl::Array2<asl::Vec3> getRangeImage();
 	asl::Array2<asl::Vec3> getNormalsImage() const { return _pnormals; }
 };
 
