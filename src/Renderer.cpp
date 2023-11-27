@@ -106,7 +106,7 @@ void Renderer::setSize(int w, int h)
 	clear();
 }
 
-void Renderer::setScene(Scene* scene)
+void Renderer::setScene(Shared<Scene> scene)
 {
 	_scene = scene;
 }

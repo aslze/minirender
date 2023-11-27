@@ -2,6 +2,7 @@
 #include <minirender/Renderer.h>
 #include <minirender/io.h>
 #include <asl/CmdArgs.h>
+#include <asl/JSON.h>
 
 using namespace asl;
 using namespace minirender;
@@ -11,9 +12,9 @@ float rf(float z, float s)
 	return 30 + 40 * sin(4 * z * (float)PI / s) / (4 * z * (float)PI / s);
 }
 
-TriMesh* createObject(int m, int n, bool usetex, Random& random)
+Shared<TriMesh> createObject(int m, int n, bool usetex, Random& random)
 {
-	TriMesh* mesh = new TriMesh();
+	Shared<TriMesh> mesh = new TriMesh();
 
 	float da = 2 * (float)PI / n;
 	float dz = 70.f / m;
@@ -37,6 +38,8 @@ TriMesh* createObject(int m, int n, bool usetex, Random& random)
 				              << (n * i + j) << (n * i + j - 1);
 		}
 	}
+
+	//fitPoly(Array<Vec2>());
 	
 	mesh->normalsI = mesh->indices;
 	if (usetex)
@@ -76,7 +79,7 @@ int main(int argc, char** argv)
 
 	bool saving = args.has("save");
 
-	Scene* scene = new Scene();
+	Shared<Scene> scene = new Scene();
 
 	Random random(false);
 

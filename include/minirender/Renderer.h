@@ -43,7 +43,7 @@ public:
 	Renderer();
 	void setSize(int w, int h);
 	float aspect() const { return (float)_image.cols() / _image.rows(); }
-	void setScene(Scene* scene);
+	void setScene(asl::Shared<Scene> scene);
 	void setProjection(const asl::Matrix4& m) { _projection = m; }
 	void setView(const asl::Matrix4& m) { _view = m; }
 	void setLight(const asl::Vec3& v, bool point = false) { _light = v; _lightIsPoint = point; }
