@@ -392,7 +392,7 @@ Array2<Vec3> loadPPM(const String& filename)
 		return image;
 	image.resize(parts[2], parts[1]);
 
-	Array<byte> data(image.cols() * 3);
+	ByteArray data(image.cols() * 3);
 
 	for (int i = 0; i < image.rows(); i++)
 	{
