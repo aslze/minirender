@@ -301,7 +301,7 @@ Shared<SceneNode> loadOBJ(const asl::String& filename)
 	Shared<SceneNode> node = new SceneNode;
 	for (auto& e : meshes)
 	{
-		TriMesh* mesh = e.value;
+		Shared<TriMesh>& mesh = e.value;
 #ifdef OBJ_TRI
 		mesh->indices = triangulateIndices(mesh->indices);
 		mesh->texcoordsI = triangulateIndices(mesh->texcoordsI);

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...3.24)
 
 project(minirender)
 
@@ -13,7 +13,7 @@ if(NOT TARGET asls)
 	if(NOT TARGET asls)
 		cmake_minimum_required(VERSION 3.14...3.24)
 		include(FetchContent)
-		FetchContent_Declare(asl URL https://github.com/aslze/asl/archive/1.11.10.zip)
+		FetchContent_Declare(asl URL https://github.com/aslze/asl/archive/1.11.14.zip)
 		FetchContent_MakeAvailable(asl)
 	endif()
 endif()
