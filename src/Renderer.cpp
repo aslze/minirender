@@ -229,6 +229,10 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	bool hastexture = _texturing && _material->texture.rows() > 0;
 
 	Vec3 color = _material->diffuse;
+	Vec3 emissive = _material->emissive;
+	auto mspecular = _material->specular;
+	auto shininess = _material->shininess;
+	const auto& texture = _material->texture;
 
 	float k[4] = { 0, 0, 0, 0 };
 
@@ -268,10 +272,10 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 				if (hastexture)
 				{
 					Vec2 uv = k[0] * texcoords[0] + k[1] * texcoords[1] + k[2] * texcoords[2];
-					color = _material->texture(int(fract(uv.y) * _material->texture.rows()), int(fract(uv.x) * _material->texture.cols()));
+					color = texture(int(fract(uv.y) * texture.rows()), int(fract(uv.x) * texture.cols()));
 				}
 
-				Vec3 value = _material->emissive;
+				Vec3 value = emissive;
 
 				if (_lighting)
 				{
@@ -292,9 +296,9 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 #ifndef FAST_LIGHT
 						float specular = pow(max((lightdir - viewDir).normalized() * normal, 0.0f), _material->shininess);
 #else
-						float specular = pow(max((lightdir - viewDir) * normal, 0.0f) / ((lightdir - viewDir).length() * normal.length()), _material->shininess);
+						float specular = pow(max((lightdir - viewDir) * normal, 0.0f) / ((lightdir - viewDir).length() * normal.length()), shininess);
 #endif
-						value += specular * _material->specular;
+						value += specular * mspecular;
 					}
 					_pnormals(i, j) = normal;
 				}
@@ -364,7 +368,7 @@ void Renderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 		Vec3& nb = _normals[mesh->normalsI[i + 1]];
 		Vec3& nc = _normals[mesh->normalsI[i + 2]];
 #endif
-		if (mesh->texcoords.length() > 0)
+		if (mesh->texcoords.length() > 0 && mesh->texcoordsI.length() > 0)
 		{
 			Vec2 ta = mesh->texcoords[mesh->texcoordsI[i]];
 			Vec2 tb = mesh->texcoords[mesh->texcoordsI[i + 1]];

@@ -89,6 +89,7 @@ struct Scene : public SceneNode
 	float ambientLight;
 	asl::Vec3 light;
 	Scene();
+	void add(const asl::Shared<SceneNode>& node) { children << node; }
 };
 
 }
