@@ -62,16 +62,16 @@ asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int 
 	for (int h = 0; h <= heightSegments; ++h)
 	{
 		float v = (float)h / (float)heightSegments;
-		float y = -halfH + v * height;
+		float z = -halfH + v * height;
 		for (int r = 0; r < segments; ++r)
 		{
 			float u = (float)r / (float)segments;
 			float angle = u * twoPi;
 			float x = radius * std::cos(angle);
-			float z = radius * std::sin(angle);
+			float y = radius * std::sin(angle);
 			mesh->vertices << asl::Vec3(x, y, z);
 			// outward normal (per-vertex)
-			mesh->normals << asl::Vec3(x, 0.0f, z).normalized();
+			mesh->normals << asl::Vec3(x, y, 0).normalized();
 			mesh->texcoords << asl::Vec2(u, v);
 		}
 	}
@@ -86,10 +86,10 @@ asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int 
 			int i3 = (h + 1) * segments + (r + 1) % segments;
 
 			// Triangles: (i0, i2, i1) and (i1, i2, i3)
-			mesh->indices << i0 << i2 << i1;
-			mesh->normalsI << i0 << i2 << i1;
-			mesh->indices << i1 << i2 << i3;
-			mesh->normalsI << i1 << i2 << i3;
+			mesh->indices << i0 << i1 << i2;
+			mesh->normalsI << i0 << i1 << i2;
+			mesh->indices << i1 << i3 << i2;
+			mesh->normalsI << i1 << i3 << i2;
 		}
 	}
 
@@ -101,20 +101,20 @@ asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int 
 			int       orig = r;
 			asl::Vec3 p = mesh->vertices[orig];
 			mesh->vertices << p;
-			mesh->normals << asl::Vec3(0.0f, -1.0f, 0.0f);
-			mesh->texcoords << asl::Vec2((p.x / radius + 1.0f) * 0.5f, (p.z / radius + 1.0f) * 0.5f);
+			mesh->normals << asl::Vec3(0, 0, -1);
+			mesh->texcoords << asl::Vec2((p.x / radius + 1.0f) * 0.5f, (p.y / radius + 1.0f) * 0.5f);
 		}
 		int bottomCenter = mesh->vertices.length();
-		mesh->vertices << asl::Vec3(0.0f, -halfH, 0.0f);
-		mesh->normals << asl::Vec3(0.0f, -1.0f, 0.0f);
+		mesh->vertices << asl::Vec3(0, 0, -halfH);
+		mesh->normals << asl::Vec3(0, 0, -1);
 		mesh->texcoords << asl::Vec2(0.5f, 0.5f);
 
 		for (int r = 0; r < segments; ++r)
 		{
 			int a = bottomRingStart + r;
 			int b = bottomRingStart + (r + 1) % segments;
-			mesh->indices << bottomCenter << a << b;
-			mesh->normalsI << bottomCenter << a << b;
+			mesh->indices << bottomCenter << b << a;
+			mesh->normalsI << bottomCenter << b << a;
 		}
 
 		int topOrigStart = heightSegments * segments; // original top ring first index
@@ -124,20 +124,20 @@ asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int 
 			int       orig = topOrigStart + r;
 			asl::Vec3 p = mesh->vertices[orig];
 			mesh->vertices << p;
-			mesh->normals << asl::Vec3(0.0f, 1.0f, 0.0f);
-			mesh->texcoords << asl::Vec2((p.x / radius + 1.0f) * 0.5f, (p.z / radius + 1.0f) * 0.5f);
+			mesh->normals << asl::Vec3(0, 0, 1);
+			mesh->texcoords << asl::Vec2((p.x / radius + 1.0f) * 0.5f, (p.y / radius + 1.0f) * 0.5f);
 		}
 		int topCenter = mesh->vertices.length();
-		mesh->vertices << asl::Vec3(0.0f, halfH, 0.0f);
-		mesh->normals << asl::Vec3(0.0f, 1.0f, 0.0f);
+		mesh->vertices << asl::Vec3(0, 0, halfH);
+		mesh->normals << asl::Vec3(0, 0, 1);
 		mesh->texcoords << asl::Vec2(0.5f, 0.5f);
 
 		for (int r = 0; r < segments; ++r)
 		{
 			int a = topRingStart + r;
 			int b = topRingStart + (r + 1) % segments;
-			mesh->indices << topCenter << b << a;
-			mesh->normalsI << topCenter << b << a;
+			mesh->indices << topCenter << a << b;
+			mesh->normalsI << topCenter << a << b;
 		}
 	}
 
