@@ -25,6 +25,7 @@ It interpolates normals to produce smooth Blinn-Phong diffuse and specular illum
   - X3D (`IndexedFaceSet` and `IndexedTriangleSet` meshes with scene hierarchy and materials)
 * Simple hierarchical scene with meshes and transforms
 * Only one point light in world-coordinates
+* Primitive shapes (cube, sphere, cylinder)
 
 ## Possible future features
 
