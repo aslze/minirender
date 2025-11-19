@@ -101,7 +101,6 @@ void Renderer::setSize(int w, int h)
 {
 	_image.resize(h, w);
 	_depth.resize(h, w);
-	_points.resize(h, w);
 	_pnormals.resize(h, w);
 	clear();
 }
@@ -115,8 +114,8 @@ void Renderer::clear()
 {
 	_image.set(_bgcolor);
 	_depth.set(1e11f);
-	_points.set(Vec3(0, 0, 0));
-	_pnormals.set(Vec3(0, 0, 1));
+	if (_saveNormals)
+		_pnormals.set(Vec3(0, 0, 1));
 }
 
 inline Vertex clip(float z, const Vertex& v1, const Vertex& v2)
@@ -300,7 +299,8 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 #endif
 						value += specular * mspecular;
 					}
-					_pnormals(i, j) = normal;
+					if (_saveNormals)
+						_pnormals(i, j) = normal;
 				}
 				_image(i, j) = value;
 			}
@@ -391,6 +391,9 @@ asl::Array2<asl::Vec3> Renderer::getRangeImage()
 	float zfar = persp ? _projection(2, 3) / (_projection(2, 2) + 1) : (_projection(2, 3) - 1) / _projection(2, 2);
 	float fardepth = persp ? zfar : 1.0f;
 	float neardepth = persp ? _znear : -1.0f;
+	_points.resize(_depth.rows(), _depth.cols());
+	float w = (float)_image.cols();
+	float h = (float)_image.rows();
 
 	for (int i = 0; i < _depth.rows(); i++)
 		for (int j = 0; j < _depth.cols(); j++)
@@ -399,8 +402,8 @@ asl::Array2<asl::Vec3> Renderer::getRangeImage()
 				_points(i, j) = Vec3(0, 0, 0);
 			else
 			{
-				float u = (j + 0.5f) / (_image.cols() / 2.f) - 1;
-				float v = -(i + 0.5f) / (_image.rows() / 2.f) + 1;
+				float u = (j + 0.5f) / (w / 2) - 1;
+				float v = -(i + 0.5f) / (h / 2) + 1;
 				float z = -_depth(i, j);
 				float x = -(u + _projection(0, 2)) * z / _projection(0, 0);
 				float y = -(v + _projection(1, 2)) * z / _projection(1, 1);

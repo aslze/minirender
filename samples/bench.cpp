@@ -23,7 +23,7 @@ Shared<TriMesh> createObject(int m, int n, bool usetex, Random& random)
 	{
 		float z = i * dz;
 		float r = rf(z, 100);
-		Vec2 nor = Vec2(1, -(rf(z + 0.001f, 100) - rf(z, 100)) / 0.001f).normalized();
+		Vec2  nor = Vec2(1, -(rf(z + 0.001f, 100) - rf(z, 100)) / 0.001f).normalized();
 		for (int j = 0; j < n; j++)
 		{
 			Vec3 p(r * cos(j * da), r * sin(j * da), z);
@@ -39,8 +39,8 @@ Shared<TriMesh> createObject(int m, int n, bool usetex, Random& random)
 		}
 	}
 
-	//fitPoly(Array<Vec2>());
-	
+	// fitPoly(Array<Vec2>());
+
 	mesh->normalsI = mesh->indices;
 	if (usetex)
 		mesh->texcoordsI = mesh->indices;
@@ -48,8 +48,9 @@ Shared<TriMesh> createObject(int m, int n, bool usetex, Random& random)
 	mesh->material = new Material();
 	mesh->material->shininess = 15;
 
-	if (usetex) {
-		Vec3 color = { random(1.f), random(1.f), random(1.f) };
+	if (usetex)
+	{
+		Vec3         color = { random(1.f), random(1.f), random(1.f) };
 		Array2<Vec3> tex(256, 256);
 		for (int i = 0; i < tex.rows(); i++)
 			for (int j = 0; j < tex.cols(); j++)
@@ -60,15 +61,14 @@ Shared<TriMesh> createObject(int m, int n, bool usetex, Random& random)
 	return mesh;
 }
 
-
 int main(int argc, char** argv)
 {
 	CmdArgs args(argc, argv);
 
-	float d = args["d"] | 700;                  // camera distance
-	int n = args["n"] | 10;                     // number of frames
-	int sizew = args["w"] | 1920;               // image size (not for console)
-	int sizeh = args["h"] | (sizew * 9 / 16);
+	float d = args["d"] | 700;      // camera distance
+	int   n = args["n"] | 10;       // number of frames
+	int   sizew = args["w"] | 1920; // image size (not for console)
+	int   sizeh = args["h"] | (sizew * 9 / 16);
 	float wx = deg2rad(float(args["rx"] | 0));  // angular X speed deg/s
 	float wz = deg2rad(float(args["rz"] | 40)); // angular Z speed deg/s
 	float fov = deg2rad(35.f);
@@ -87,8 +87,9 @@ int main(int argc, char** argv)
 	{
 		auto shape = createObject(200, 200, usetex, random);
 
-		shape->material->diffuse = { random(1.f), random(1.f) ,random(1.f) };
-		shape->transform = Matrix4::translate(random(-180.f, 180.f), random(-180.f, 180.f), random(-100.f, 100.f)) * Matrix4::rotate({ random(1.f), random(1.f), random(1.f) });
+		shape->material->diffuse = { random(1.f), random(1.f), random(1.f) };
+		shape->transform = Matrix4::translate(random(-180.f, 180.f), random(-180.f, 180.f), random(-100.f, 100.f)) *
+		                   Matrix4::rotate({ random(1.f), random(1.f), random(1.f) });
 		scene->children << shape;
 	}
 	scene->ambientLight = 0.2f;
@@ -101,11 +102,13 @@ int main(int argc, char** argv)
 	Renderer renderer;
 
 	renderer.setLight(Vec3(-0.4f, .6f, 1.f));
-	//enderer.setLight({ 0, 0, 0 }, true);
+	// enderer.setLight({ 0, 0, 0 }, true);
 	renderer.setScene(scene);
 	renderer.setSize(sizew, sizeh);
 	renderer.setProjection(projectionFrustum(fov, renderer.aspect(), 10, 7000));
 	renderer.setLighting(!nolight);
+	renderer.setTexturing(usetex);
+	renderer.setSaveNormals(false);
 
 	Array<double> times;
 
@@ -118,7 +121,7 @@ int main(int argc, char** argv)
 	for (float i = 0; i < n; i++)
 	{
 		double t = now();
-		float dt = 0.1f;
+		float  dt = 0.1f;
 		t0 = t;
 
 		rz += wz * dt;

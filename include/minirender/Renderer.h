@@ -39,6 +39,7 @@ class Renderer
 	bool _lighting;
 	bool _texturing;
 	bool _lightIsPoint;
+	bool _saveNormals;
 public:
 	Renderer();
 	void setSize(int w, int h);
@@ -50,6 +51,7 @@ public:
 	void setMaterial(asl::Shared<Material> material) { _material = material; }
 	void setLighting(bool on) { _lighting = on; }
 	void setTexturing(bool on) { _texturing = on; }
+	void setSaveNormals(bool on) { _saveNormals = on; }
 	void setBackground(const asl::Vec3& color) { _bgcolor = color; }
 	void clear();
 	void render();
