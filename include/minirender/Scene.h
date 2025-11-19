@@ -48,7 +48,7 @@ struct Renderable
 {
 	TriMesh* mesh;
 	asl::Matrix4 transform;
-	Renderable() {}
+	Renderable(): mesh(0) {}
 	Renderable(TriMesh* mesh, const asl::Matrix4& transform) : mesh(mesh), transform(transform) {}
 };
 
@@ -67,6 +67,7 @@ struct Shape : public SceneNode
 {
 	asl::Shared<Material> material;
 	virtual ~Shape() {}
+	virtual void applyTransform() {}
 };
 
 struct TriMesh : public Shape
@@ -80,6 +81,7 @@ struct TriMesh : public Shape
 
 	virtual void collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform);
 	virtual BBox getBbox(const asl::Matrix4& xform = asl::Matrix4::identity()) const;
+	virtual void applyTransform();
 
 	TriMesh();
 };

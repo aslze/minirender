@@ -50,6 +50,18 @@ TriMesh::TriMesh()
 	material = NULL;
 }
 
+void TriMesh::applyTransform()
+{
+	for (auto& p : vertices)
+		p = transform * p;
+
+	Matrix4 invTrans = transform.inverse().transposed();
+	for (auto& n : normals)
+		n = (invTrans % n).normalized();
+
+	transform = Matrix4::identity();
+}
+
 Material::Material() :
 	diffuse(0.7f, 0.7f, 0.9f),
 	specular(0.8f, 0.8f, 0.8f),

@@ -11,7 +11,7 @@ using namespace asl;
 namespace minirender
 {
 Shared<SceneNode> loadX3D(const asl::String& filename);
-Array<int> triangulateIndices(const Array<int>& indices);
+Array<int>        triangulateIndices(const Array<int>& indices);
 
 Shared<TriMesh> loadSTLa(const asl::String& filename)
 {
@@ -164,6 +164,9 @@ void saveSTL(Shared<TriMesh> mesh, const String& name)
 		Vec3 a = mesh->vertices[mesh->indices[i]],    //
 		    b = mesh->vertices[mesh->indices[i + 1]], //
 		    c = mesh->vertices[mesh->indices[i + 2]];
+		a = mesh->transform * a;
+		b = mesh->transform * b;
+		c = mesh->transform * c;
 		Vec3 n = ((c - a) ^ (b - a)).normalized();
 		buffer << n.x << n.y << n.z;
 		buffer << a.x << a.y << a.z;
@@ -189,7 +192,7 @@ Shared<SceneNode> loadOBJ(const asl::String& filename)
 
 	Shared<TriMesh> mesh = new TriMesh();
 
-	Dic<Shared<TriMesh>> meshes;
+	Dic<Shared<TriMesh>>  meshes;
 	Dic<Shared<Material>> materials;
 
 	materials[""] = new Material;
@@ -257,7 +260,7 @@ Shared<SceneNode> loadOBJ(const asl::String& filename)
 		}
 		else if (parts[0] == "mtllib")
 		{
-			TextFile  matfile(Path(filename).directory() + "/" + parts[1], File::READ);
+			TextFile         matfile(Path(filename).directory() + "/" + parts[1], File::READ);
 			Shared<Material> mat = materials[""];
 			for (auto line : matfile.lines())
 			{
