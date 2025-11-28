@@ -1,4 +1,5 @@
 #include <minirender/primitives.h>
+#include <cmath>
 
 namespace minirender
 {
