@@ -23,9 +23,10 @@ It interpolates normals to produce smooth Blinn-Phong diffuse and specular illum
   - STL (binary or text)
   - OBJ/MTL
   - X3D (`IndexedFaceSet` and `IndexedTriangleSet` meshes with scene hierarchy and materials)
+* Save meshes as STL or scenes as OBJ
 * Simple hierarchical scene with meshes and transforms
 * Only one point light in world-coordinates
-* Primitive shapes (cube, sphere, cylinder)
+* Primitive shapes (cube, sphere, cylinder, cone, arrow)
 
 ## Possible future features
 

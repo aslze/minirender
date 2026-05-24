@@ -1,9 +1,12 @@
 #include <minirender/primitives.h>
+#include <cmath>
 
 namespace minirender
 {
 
-asl::Shared<minirender::TriMesh> createCube(float size)
+using namespace asl;
+
+Shared<TriMesh> createCube(float size)
 {
 	using namespace minirender;
 	auto mesh = new TriMesh();
@@ -14,19 +17,17 @@ asl::Shared<minirender::TriMesh> createCube(float size)
 	// Face order: +X, -X, +Y, -Y, +Z, -Z
 	struct FaceDef
 	{
-		asl::Vec3 v0, v1, v2, v3, n;
+		Vec3 v0, v1, v2, v3, n;
 	};
-	FaceDef faces[6] = {
-		{ asl::Vec3(h, -h, -h), asl::Vec3(h, -h, h), asl::Vec3(h, h, h), asl::Vec3(h, h, -h), asl::Vec3(1, 0, 0) },
-		{ asl::Vec3(-h, -h, h), asl::Vec3(-h, -h, -h), asl::Vec3(-h, h, -h), asl::Vec3(-h, h, h), asl::Vec3(-1, 0, 0) },
-		{ asl::Vec3(-h, h, -h), asl::Vec3(h, h, -h), asl::Vec3(h, h, h), asl::Vec3(-h, h, h), asl::Vec3(0, 1, 0) },
-		{ asl::Vec3(-h, -h, h), asl::Vec3(h, -h, h), asl::Vec3(h, -h, -h), asl::Vec3(-h, -h, -h), asl::Vec3(0, -1, 0) },
-		{ asl::Vec3(h, -h, h), asl::Vec3(-h, -h, h), asl::Vec3(-h, h, h), asl::Vec3(h, h, h), asl::Vec3(0, 0, 1) },
-		{ asl::Vec3(-h, -h, -h), asl::Vec3(h, -h, -h), asl::Vec3(h, h, -h), asl::Vec3(-h, h, -h), asl::Vec3(0, 0, -1) }
-	};
+	FaceDef faces[6] = { { Vec3(h, -h, -h), Vec3(h, -h, h), Vec3(h, h, h), Vec3(h, h, -h), Vec3(1, 0, 0) },
+		                 { Vec3(-h, -h, h), Vec3(-h, -h, -h), Vec3(-h, h, -h), Vec3(-h, h, h), Vec3(-1, 0, 0) },
+		                 { Vec3(-h, h, -h), Vec3(h, h, -h), Vec3(h, h, h), Vec3(-h, h, h), Vec3(0, 1, 0) },
+		                 { Vec3(-h, -h, h), Vec3(h, -h, h), Vec3(h, -h, -h), Vec3(-h, -h, -h), Vec3(0, -1, 0) },
+		                 { Vec3(h, -h, h), Vec3(-h, -h, h), Vec3(-h, h, h), Vec3(h, h, h), Vec3(0, 0, 1) },
+		                 { Vec3(-h, -h, -h), Vec3(h, -h, -h), Vec3(h, h, -h), Vec3(-h, h, -h), Vec3(0, 0, -1) } };
 
 	// texcoords per face (0,0) bottom-left, (1,1) top-right
-	asl::Vec2 uv0(0.0f, 0.0f), uv1(1.0f, 0.0f), uv2(1.0f, 1.0f), uv3(0.0f, 1.0f);
+	Vec2 uv0(0.0f, 0.0f), uv1(1.0f, 0.0f), uv2(1.0f, 1.0f), uv3(0.0f, 1.0f);
 
 	for (int f = 0; f < 6; ++f)
 	{
@@ -42,11 +43,11 @@ asl::Shared<minirender::TriMesh> createCube(float size)
 		mesh->normalsI << base + 0 << base + 3 << base + 2;
 	}
 
-	mesh->material = new minirender::Material();
+	mesh->material = new Material();
 	return mesh;
 }
 
-asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int segments, int heightSegments, bool caps)
+Shared<TriMesh> createCylinder(float radius, float height, int segments, int heightSegments, bool caps)
 {
 	using namespace minirender;
 	auto mesh = new TriMesh();
@@ -57,7 +58,7 @@ asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int 
 		heightSegments = 1;
 
 	const float halfH = height * 0.5f;
-	const float twoPi = 2.0f * asl::PIf;
+	const float twoPi = 2.0f * PIf;
 
 	for (int h = 0; h <= heightSegments; ++h)
 	{
@@ -69,10 +70,10 @@ asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int 
 			float angle = u * twoPi;
 			float x = radius * std::cos(angle);
 			float y = radius * std::sin(angle);
-			mesh->vertices << asl::Vec3(x, y, z);
+			mesh->vertices << Vec3(x, y, z);
 			// outward normal (per-vertex)
-			mesh->normals << asl::Vec3(x, y, 0).normalized();
-			mesh->texcoords << asl::Vec2(u, v);
+			mesh->normals << Vec3(x, y, 0).normalized();
+			mesh->texcoords << Vec2(u, v);
 		}
 	}
 
@@ -98,16 +99,16 @@ asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int 
 		int bottomRingStart = mesh->vertices.length();
 		for (int r = 0; r < segments; ++r)
 		{
-			int       orig = r;
-			asl::Vec3 p = mesh->vertices[orig];
+			int  orig = r;
+			Vec3 p = mesh->vertices[orig];
 			mesh->vertices << p;
-			mesh->normals << asl::Vec3(0, 0, -1);
-			mesh->texcoords << asl::Vec2((p.x / radius + 1.0f) * 0.5f, (p.y / radius + 1.0f) * 0.5f);
+			mesh->normals << Vec3(0, 0, -1);
+			mesh->texcoords << Vec2((p.x / radius + 1.0f) * 0.5f, (p.y / radius + 1.0f) * 0.5f);
 		}
 		int bottomCenter = mesh->vertices.length();
-		mesh->vertices << asl::Vec3(0, 0, -halfH);
-		mesh->normals << asl::Vec3(0, 0, -1);
-		mesh->texcoords << asl::Vec2(0.5f, 0.5f);
+		mesh->vertices << Vec3(0, 0, -halfH);
+		mesh->normals << Vec3(0, 0, -1);
+		mesh->texcoords << Vec2(0.5f, 0.5f);
 
 		for (int r = 0; r < segments; ++r)
 		{
@@ -121,16 +122,16 @@ asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int 
 		int topRingStart = mesh->vertices.length();
 		for (int r = 0; r < segments; ++r)
 		{
-			int       orig = topOrigStart + r;
-			asl::Vec3 p = mesh->vertices[orig];
+			int  orig = topOrigStart + r;
+			Vec3 p = mesh->vertices[orig];
 			mesh->vertices << p;
-			mesh->normals << asl::Vec3(0, 0, 1);
-			mesh->texcoords << asl::Vec2((p.x / radius + 1.0f) * 0.5f, (p.y / radius + 1.0f) * 0.5f);
+			mesh->normals << Vec3(0, 0, 1);
+			mesh->texcoords << Vec2((p.x / radius + 1.0f) * 0.5f, (p.y / radius + 1.0f) * 0.5f);
 		}
 		int topCenter = mesh->vertices.length();
-		mesh->vertices << asl::Vec3(0, 0, halfH);
-		mesh->normals << asl::Vec3(0, 0, 1);
-		mesh->texcoords << asl::Vec2(0.5f, 0.5f);
+		mesh->vertices << Vec3(0, 0, halfH);
+		mesh->normals << Vec3(0, 0, 1);
+		mesh->texcoords << Vec2(0.5f, 0.5f);
 
 		for (int r = 0; r < segments; ++r)
 		{
@@ -141,12 +142,84 @@ asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int 
 		}
 	}
 
-	mesh->material = new minirender::Material();
+	mesh->material = new Material();
 
 	return mesh;
 }
 
-asl::Shared<minirender::TriMesh> createSphere(float radius, int latSegments, int longSegments)
+Shared<TriMesh> createCone(float radius, float height, int segments, bool caps)
+{
+	using namespace minirender;
+	auto mesh = new TriMesh();
+	if (segments < 3)
+		segments = 3;
+	int heightSegments = 1; // ?
+	if (heightSegments < 1)
+		heightSegments = 1;
+	const float halfH = height * 0.5f;
+	const float twoPi = 2.0f * PIf;
+	for (int h = 0; h <= heightSegments; ++h)
+	{
+		float v = (float)h / (float)heightSegments;
+		float z = -halfH + v * height;
+		float r = radius * (1.0f - v); // linear taper
+		for (int s = 0; s < segments; ++s)
+		{
+			float u = (float)s / (float)segments;
+			float angle = u * twoPi;
+			float x = r * std::cos(angle);
+			float y = r * std::sin(angle);
+			mesh->vertices << Vec3(x, y, z);
+			// approximate normal for smooth shading
+			mesh->normals << Vec3(x, y, radius / height).normalized();
+			mesh->texcoords << Vec2(u, v);
+		}
+	}
+
+	for (int h = 0; h < heightSegments; ++h)
+	{
+		for (int s = 0; s < segments; ++s)
+		{
+			int i0 = h * segments + s;
+			int i1 = h * segments + (s + 1) % segments;
+			int i2 = (h + 1) * segments + s;
+			int i3 = (h + 1) * segments + (s + 1) % segments;
+			mesh->indices << i0 << i1 << i2;
+			mesh->normalsI << i0 << i1 << i2;
+			mesh->indices << i1 << i3 << i2;
+			mesh->normalsI << i1 << i3 << i2;
+		}
+	}
+	if (caps)
+	{
+		int baseIndex = mesh->vertices.length();
+		for (int s = 0; s < segments; ++s)
+		{
+			int  orig = s;
+			Vec3 p = mesh->vertices[orig];
+			mesh->vertices << p;
+			mesh->normals << Vec3(0, 0, -1);
+			mesh->texcoords << Vec2((p.x / radius + 1.0f) * 0.5f, (p.y / radius + 1.0f) * 0.5f);
+		}
+		int centerIndex = mesh->vertices.length();
+		mesh->vertices << Vec3(0, 0, -halfH);
+		mesh->normals << Vec3(0, 0, -1);
+		mesh->texcoords << Vec2(0.5f, 0.5f);
+
+		for (int s = 0; s < segments; ++s)
+		{
+			int a = baseIndex + s;
+			int b = baseIndex + (s + 1) % segments;
+			mesh->indices << centerIndex << b << a;
+			mesh->normalsI << centerIndex << b << a;
+		}
+	}
+
+	mesh->material = new Material();
+	return mesh;
+}
+
+Shared<TriMesh> createSphere(float radius, int latSegments, int longSegments)
 {
 	using namespace minirender;
 	auto mesh = new TriMesh();
@@ -156,34 +229,34 @@ asl::Shared<minirender::TriMesh> createSphere(float radius, int latSegments, int
 	if (longSegments < 3)
 		longSegments = 3;
 
-	mesh->vertices << asl::Vec3(0.0f, radius, 0.0f);
-	mesh->normals << asl::Vec3(0.0f, 1.0f, 0.0f);
-	mesh->texcoords << asl::Vec2(0.5f, 0.0f);
+	mesh->vertices << Vec3(0.0f, radius, 0.0f);
+	mesh->normals << Vec3(0.0f, 1.0f, 0.0f);
+	mesh->texcoords << Vec2(0.5f, 0.0f);
 
 	int firstRingStart = mesh->vertices.length();
 	for (int lat = 1; lat < latSegments; ++lat)
 	{
 		float v = (float)lat / (float)latSegments; // 0..1
-		float phi = v * asl::PIf;                  // 0..pi
+		float phi = v * PIf;                       // 0..pi
 		float sinPhi = std::sin(phi);
 		float cosPhi = std::cos(phi);
 		for (int lon = 0; lon < longSegments; ++lon)
 		{
 			float u = (float)lon / (float)longSegments; // 0..1
-			float theta = u * 2.0f * asl::PIf;          // 0..2pi
+			float theta = u * 2.0f * PIf;               // 0..2pi
 			float x = radius * sinPhi * std::cos(theta);
 			float y = radius * cosPhi;
 			float z = radius * sinPhi * std::sin(theta);
-			mesh->vertices << asl::Vec3(x, y, z);
-			mesh->normals << asl::Vec3(x, y, z).normalized();
-			mesh->texcoords << asl::Vec2(u, 1.0f - v); // v flipped
+			mesh->vertices << Vec3(x, y, z);
+			mesh->normals << Vec3(x, y, z).normalized();
+			mesh->texcoords << Vec2(u, 1.0f - v); // v flipped
 		}
 	}
 
 	int bottomIndex = mesh->vertices.length();
-	mesh->vertices << asl::Vec3(0.0f, -radius, 0.0f);
-	mesh->normals << asl::Vec3(0.0f, -1.0f, 0.0f);
-	mesh->texcoords << asl::Vec2(0.5f, 1.0f);
+	mesh->vertices << Vec3(0.0f, -radius, 0.0f);
+	mesh->normals << Vec3(0.0f, -1.0f, 0.0f);
+	mesh->texcoords << Vec2(0.5f, 1.0f);
 
 	for (int lon = 0; lon < longSegments; ++lon)
 	{
@@ -224,8 +297,51 @@ asl::Shared<minirender::TriMesh> createSphere(float radius, int latSegments, int
 		mesh->normalsI << bottomIndex << i1 << i2;
 	}
 
-	mesh->material = new minirender::Material();
+	mesh->material = new Material();
 	return mesh;
 }
 
+Shared<TriMesh> createArrow(const Vec3& origin, const Vec3& direction, float headLength, int segments)
+{
+	if (headLength <= 0)
+		headLength = direction.length() * 0.1f;
+	float shaftRadius = direction.length() * 0.01f;
+	float headRadius = headLength * 0.3f;
+	auto  mesh = new TriMesh();
+	Vec3  dir = direction.normalized();
+	Vec3  up(0, 1, 0);
+	if (fabs(dir * up) > 0.999f)
+		up = Vec3(1, 0, 0);
+	Vec3 right = dir ^ up;
+	up = right ^ dir;
+	Vec3 h = direction - dir * headLength;
+	auto shaft = createCylinder(shaftRadius, direction.length() - headLength, segments, 1, false);
+	for (int i = 0; i < shaft->vertices.length(); ++i)
+	{
+		Vec3 v = shaft->vertices[i];
+		mesh->vertices << origin + h / 2 + right * v.x + up * v.y + dir * v.z;
+		mesh->normals << right * shaft->normals[i].x + up * shaft->normals[i].y + dir * shaft->normals[i].z;
+	}
+	for (int i = 0; i < shaft->indices.length(); ++i)
+	{
+		mesh->indices << shaft->indices[i];
+		mesh->normalsI << shaft->indices[i];
+	}
+	auto head = createCone(headRadius, headLength, segments, true);
+	for (int i = 0; i < head->vertices.length(); ++i)
+	{
+		Vec3 v = head->vertices[i];
+		mesh->vertices << origin + dir * headLength / 2 + right * v.x + up * v.y +
+		                      dir * (v.z + direction.length() - headLength);
+		mesh->normals << right * head->normals[i].x + up * head->normals[i].y + dir * head->normals[i].z;
+	}
+	int headBaseIndex = mesh->vertices.length() - head->vertices.length();
+	for (int i = 0; i < head->indices.length(); ++i)
+	{
+		mesh->indices << headBaseIndex + head->indices[i];
+		mesh->normalsI << headBaseIndex + head->indices[i];
+	}
+	mesh->material = new Material();
+	return mesh;
+}
 }

@@ -10,5 +10,10 @@ asl::Shared<minirender::TriMesh> createCube(float size = 1.0f);
 asl::Shared<minirender::TriMesh> createCylinder(float radius, float height, int segments = 32, int heightSegments = 1,
                                                 bool caps = true);
 
+asl::Shared<minirender::TriMesh> createCone(float radius, float height, int segments = 32, bool caps = true);
+
 asl::Shared<minirender::TriMesh> createSphere(float radius, int latSegments = 16, int longSegments = 32);
+
+asl::Shared<minirender::TriMesh> createArrow(const asl::Vec3& origin, const asl::Vec3& direction, float headLength = 0,
+                                             int segments = 16);
 }
