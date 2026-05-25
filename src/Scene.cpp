@@ -2,7 +2,8 @@
 
 using namespace asl;
 
-namespace minirender {
+namespace minirender
+{
 
 SceneNode::SceneNode()
 {
@@ -63,16 +64,47 @@ void TriMesh::applyTransform()
 }
 
 Material::Material() :
-	diffuse(0.7f, 0.7f, 0.9f),
-	specular(0.8f, 0.8f, 0.8f),
-	emissive(0, 0, 0),
-	shininess(12.0f),
-	opacity(1.0f)
-{}
+    diffuse(0.7f, 0.7f, 0.9f), specular(0.8f, 0.8f, 0.8f), emissive(0, 0, 0), shininess(12.0f), opacity(1.0f)
+{
+}
 
 Scene::Scene()
 {
 	ambientLight = 0.1f;
+}
+
+Shared<TriMesh> merge(const Array<Shared<Shape>>& shapes)
+{
+	Shared<TriMesh> result = new TriMesh;
+	for (auto& shape : shapes)
+	{
+		if (auto mesh = shape.as<TriMesh>())
+		{
+			result->material = mesh->material;
+			int v0 = result->vertices.length();
+			int n0 = result->normals.length();
+			int t0 = result->texcoords.length();
+			result->vertices.reserve(v0 + mesh->vertices.length());
+			result->normals.reserve(n0 + mesh->normals.length());
+			result->texcoords.reserve(t0 + mesh->texcoords.length());
+			result->indices.reserve(result->indices.length() + mesh->indices.length());
+			auto m = mesh->transform;
+			for (auto& v : mesh->vertices)
+				result->vertices << m * v;
+			for (auto& n : mesh->normals)
+				result->normals << (m % n).normalized();
+			for (auto& t : mesh->texcoords)
+				result->texcoords << t;
+			for (auto& i : mesh->indices)
+				result->indices << i + v0;
+			for (auto& i : mesh->normalsI)
+				result->normalsI << i + n0;
+			for (auto& i : mesh->texcoordsI)
+				result->texcoordsI << i + t0;
+		}
+	}
+
+	return result;
 }
 
 }

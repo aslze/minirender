@@ -307,41 +307,16 @@ Shared<TriMesh> createArrow(const Vec3& origin, const Vec3& direction, float hea
 		headLength = direction.length() * 0.1f;
 	float shaftRadius = direction.length() * 0.01f;
 	float headRadius = headLength * 0.3f;
-	auto  mesh = new TriMesh();
 	Vec3  dir = direction.normalized();
-	Vec3  up(0, 1, 0);
-	if (fabs(dir * up) > 0.999f)
-		up = Vec3(1, 0, 0);
-	Vec3 right = dir ^ up;
-	up = right ^ dir;
-	Vec3 h = direction - dir * headLength;
-	auto shaft = createCylinder(shaftRadius, direction.length() - headLength, segments, 1, false);
-	for (int i = 0; i < shaft->vertices.length(); ++i)
-	{
-		Vec3 v = shaft->vertices[i];
-		mesh->vertices << origin + h / 2 + right * v.x + up * v.y + dir * v.z;
-		mesh->normals << right * shaft->normals[i].x + up * shaft->normals[i].y + dir * shaft->normals[i].z;
-	}
-	for (int i = 0; i < shaft->indices.length(); ++i)
-	{
-		mesh->indices << shaft->indices[i];
-		mesh->normalsI << shaft->indices[i];
-	}
+	Vec3  h = direction - dir * headLength;
+	auto base = Matrix4::orthonormalBase(dir);
+
+	auto shaft = createCylinder(shaftRadius, direction.length() - headLength, segments, 1, true);
+	shaft->transform = Matrix4::translate(origin + h / 2) * base;
+
 	auto head = createCone(headRadius, headLength, segments, true);
-	for (int i = 0; i < head->vertices.length(); ++i)
-	{
-		Vec3 v = head->vertices[i];
-		mesh->vertices << origin + dir * headLength / 2 + right * v.x + up * v.y +
-		                      dir * (v.z + direction.length() - headLength);
-		mesh->normals << right * head->normals[i].x + up * head->normals[i].y + dir * head->normals[i].z;
-	}
-	int headBaseIndex = mesh->vertices.length() - head->vertices.length();
-	for (int i = 0; i < head->indices.length(); ++i)
-	{
-		mesh->indices << headBaseIndex + head->indices[i];
-		mesh->normalsI << headBaseIndex + head->indices[i];
-	}
-	mesh->material = new Material();
-	return mesh;
+	head->transform = Matrix4::translate(origin + dir * (direction.length() - headLength / 2)) * base;
+
+	return merge({ shaft, head }).as<TriMesh>();
 }
 }

@@ -61,6 +61,7 @@ struct SceneNode
 	virtual ~SceneNode() {}
 	virtual void collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform);
 	virtual BBox getBbox(const asl::Matrix4& xform = asl::Matrix4::identity()) const;
+	void         add(const asl::Shared<SceneNode>& node) { children << node; }
 };
 
 struct Shape : public SceneNode
@@ -70,7 +71,9 @@ struct Shape : public SceneNode
 	virtual void applyTransform() {}
 };
 
-struct TriMesh : public Shape
+asl::Shared<TriMesh> merge(const asl::Array<asl::Shared<Shape>>& shapes);
+
+struct TriMesh : public Shape		
 {
 	asl::Array<asl::Vec3> vertices;
 	asl::Array<asl::Vec3> normals;
