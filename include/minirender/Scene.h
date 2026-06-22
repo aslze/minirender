@@ -1,5 +1,5 @@
-#ifndef SCENE_H
-#define SCENE_H
+#ifndef ASL_SCENE_H
+#define ASL_SCENE_H
 
 #include <asl/Vec3.h>
 #include <asl/Vec2.h>
@@ -31,6 +31,10 @@ struct BBox
 	BBox& operator+=(const asl::Vec3& p) { pmin = min(pmin, p); pmax = max(pmax, p); return *this; }
 	asl::Vec3 size() const { return max(pmax - pmin, asl::Vec3::zeros()); }
 	asl::Vec3 center() const { return (pmax + pmin) / 2; }
+	asl::Vec3 corners(int i) const
+	{
+		return asl::Vec3((i & 1) ? pmax.x : pmin.x, (i & 2) ? pmax.y : pmin.y, (i & 4) ? pmax.z : pmin.z);
+	}
 };
 
 struct TriMesh;
@@ -60,7 +64,7 @@ struct SceneNode
 	SceneNode();
 	virtual ~SceneNode() {}
 	virtual void collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform);
-	virtual BBox getBbox(const asl::Matrix4& xform = asl::Matrix4::identity()) const;
+	virtual BBox getBbox(const asl::Matrix4& xform = asl::Matrix4::identity(), bool includeChildren = true, bool local = false) const;
 	void         add(const asl::Shared<SceneNode>& node) { children << node; }
 };
 
@@ -83,7 +87,7 @@ struct TriMesh : public Shape
 	asl::Array<int> texcoordsI;
 
 	virtual void collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform);
-	virtual BBox getBbox(const asl::Matrix4& xform = asl::Matrix4::identity()) const;
+	virtual BBox getBbox(const asl::Matrix4& xform = asl::Matrix4::identity(), bool includeChildren = true, bool local = false) const;
 	virtual void applyTransform();
 
 	TriMesh();

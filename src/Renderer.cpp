@@ -4,29 +4,30 @@
 #define PREMULT
 #define FAST_LIGHT
 #define POINTLIGHT
+#define FCULL_MESH
+// #define FCULL_TRIANGLE
 
 using namespace asl;
 
-namespace minirender {
-
+namespace minirender
+{
 
 inline Vec3 htransform(const Matrix4& m, const Vec3& p)
 {
 	float iw = 1 / (m(3, 0) * p.x + m(3, 1) * p.y + m(3, 2) * p.z + m(3, 3));
-	return Vec3(
-		(m(0, 0) * p.x + m(0, 1) * p.y + m(0, 2) * p.z + m(0, 3)) * iw,
-		(m(1, 0) * p.x + m(1, 1) * p.y + m(1, 2) * p.z + m(1, 3)) * iw,
-		(m(2, 0) * p.x + m(2, 1) * p.y + m(2, 2) * p.z + m(2, 3)) * iw);
+	return Vec3((m(0, 0) * p.x + m(0, 1) * p.y + m(0, 2) * p.z + m(0, 3)) * iw,
+	            (m(1, 0) * p.x + m(1, 1) * p.y + m(1, 2) * p.z + m(1, 3)) * iw,
+	            (m(2, 0) * p.x + m(2, 1) * p.y + m(2, 2) * p.z + m(2, 3)) * iw);
 }
 
 inline Vec3 mix(float k[3], const Vec3 v[3])
 {
-	//float x[4][4] = {
+	// float x[4][4] = {
 	//	{ v[0].x, v[0].y, v[0].z, 0 }, { v[1].x, v[1].y, v[1].z, 0 }, { v[2].x, v[2].y, v[2].z, 0 }, { 0, 0, 0, 0 }
-	//};
+	// };
 	float x[4][4] = {
-			{ v[0].x, v[1].x, v[2].x, 0 }, { v[0].y, v[1].y, v[2].y, 0 }, { v[0].z, v[1].z, v[2].z, 0 }, { 0, 0, 0, 0 }
-		};
+		{ v[0].x, v[1].x, v[2].x, 0 }, { v[0].y, v[1].y, v[2].y, 0 }, { v[0].z, v[1].z, v[2].z, 0 }, { 0, 0, 0, 0 }
+	};
 	float y[4] = { 0, 0, 0, 0 };
 	for (int i = 0; i < 3; i++)
 	{
@@ -39,30 +40,20 @@ inline Vec3 mix(float k[3], const Vec3 v[3])
 
 Matrix4 projectionOrtho(float l, float r, float b, float t, float n, float f)
 {
-	return Matrix4(
-		2 / (r - l), 0, 0, -(r + l) / (r - l),
-		0, 2 / (t - b), 0, -(t + b) / (t - b),
-		0, 0, -2 / (f - n), -(f + n) / (f - n),
-		0, 0, 0, 1);
+	return Matrix4(2 / (r - l), 0, 0, -(r + l) / (r - l), 0, 2 / (t - b), 0, -(t + b) / (t - b), 0, 0, -2 / (f - n),
+	               -(f + n) / (f - n), 0, 0, 0, 1);
 }
 
 Matrix4 projectionPerspective(float l, float r, float b, float t, float n, float f)
 {
-	return Matrix4(
-		2 * n / (r - l), 0, (r + l) / (r - l), 0,
-		0, 2 * n / (t - b), (t + b) / (t - b), 0,
-		0, 0, -(f + n) / (f - n), -2 * f * n / (f - n),
-		0, 0, -1, 0);
+	return Matrix4(2 * n / (r - l), 0, (r + l) / (r - l), 0, 0, 2 * n / (t - b), (t + b) / (t - b), 0, 0, 0,
+	               -(f + n) / (f - n), -2 * f * n / (f - n), 0, 0, -1, 0);
 }
 
 Matrix4 projectionCV(const Matrix4& K, float w, float h, float n, float f)
 {
-	return Matrix4(
-		K(0, 0) * 2 / w, K(0, 1) * 2 / w, -2 * K(0, 2) / w + 1, 0,
-		K(1, 0) * 2 / h, K(1, 1) * 2 / h, 2 * K(1, 2) / h - 1, 0,
-		0, 0, -(f + n) / (f - n), -2 * f * n / (f - n),
-		0, 0, -1, 0
-	);
+	return Matrix4(K(0, 0) * 2 / w, K(0, 1) * 2 / w, -2 * K(0, 2) / w + 1, 0, K(1, 0) * 2 / h, K(1, 1) * 2 / h,
+	               2 * K(1, 2) / h - 1, 0, 0, 0, -(f + n) / (f - n), -2 * f * n / (f - n), 0, 0, -1, 0);
 }
 
 Matrix4 projectionFrustum(float fov, float aspect, float n, float f)
@@ -120,7 +111,8 @@ void Renderer::clear()
 
 inline Vertex clip(float z, const Vertex& v1, const Vertex& v2)
 {
-	float k = (fabs(v2.position.z - v1.position.z) < 1e-6f) ? 0.5f : (z - v1.position.z) / (v2.position.z - v1.position.z);
+	float k =
+	    (fabs(v2.position.z - v1.position.z) < 1e-6f) ? 0.5f : (z - v1.position.z) / (v2.position.z - v1.position.z);
 	Vertex v;
 	v.position = k * v2.position + (1 - k) * v1.position;
 	v.normal = k * v2.normal + (1 - k) * v1.normal;
@@ -194,7 +186,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	{
 		p[i].x = (1 + ndc[i].x) * (w / 2);
 		p[i].y = (1 - ndc[i].y) * (h / 2);
-		//p[i] = topx * ndc[i].xy();
+		// p[i] = topx * ndc[i].xy();
 		pmin = min(pmin, p[i]);
 		pmax = max(pmax, p[i]);
 	}
@@ -209,9 +201,9 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 		return; // back face cull
 	}
 
-	float i2a = (a == 0) ? 0.0f : -1.0f / a;		
+	float i2a = (a == 0) ? 0.0f : -1.0f / a;
 
-	//Vec2 n0 = (p[2] - p[1]).perpend() * i2a;
+	// Vec2 n0 = (p[2] - p[1]).perpend() * i2a;
 	Vec2 n1 = (p[0] - p[2]).perpend() * i2a;
 	Vec2 n2 = (p[1] - p[0]).perpend() * i2a;
 
@@ -227,17 +219,17 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	bool hasspecular = _material->shininess != 0;
 	bool hastexture = _texturing && _material->texture.rows() > 0;
 
-	Vec3 color = _material->diffuse;
-	Vec3 emissive = _material->emissive;
-	auto mspecular = _material->specular;
-	auto shininess = _material->shininess;
+	Vec3        color = _material->diffuse;
+	Vec3        emissive = _material->emissive;
+	auto        mspecular = _material->specular;
+	auto        shininess = _material->shininess;
 	const auto& texture = _material->texture;
 
 	float k[4] = { 0, 0, 0, 0 };
 
 	for (float y = floor(pmin.y) + 0.5f; y <= pmax.y + 0.5f; y++)
 	{
-		Vec2 pt(floor(pmin.x) + 0.5f, y);
+		Vec2  pt(floor(pmin.x) + 0.5f, y);
 		float e1 = n1 * (pt - p[2]);
 		float e2 = n2 * (pt - p[0]);
 		for (float x = pt.x; x <= pmax.x + 0.5f; x++, e1 += n1.x, e2 += n2.x)
@@ -280,13 +272,13 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 				{
 					Vec3 position = k[0] * vertices[0] + k[1] * vertices[1] + k[2] * vertices[2];
 					Vec3 lightdir = _lightIsPoint ? (_lightdir - position).normalized() : _lightdir;
-					
+
 #ifndef FAST_LIGHT
 					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
 					value += (max(0.0f, normal * lightdir) + _ambient) * color;
 #else
 					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]);
-					value += (max(0.0f, normal * lightdir)/normal.length() + _ambient) * color;
+					value += (max(0.0f, normal * lightdir) / normal.length() + _ambient) * color;
 #endif
 
 					if (hasspecular)
@@ -295,7 +287,9 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 #ifndef FAST_LIGHT
 						float specular = pow(max((lightdir - viewDir).normalized() * normal, 0.0f), _material->shininess);
 #else
-						float specular = pow(max((lightdir - viewDir) * normal, 0.0f) / ((lightdir - viewDir).length() * normal.length()), shininess);
+						float specular = pow(
+						    max((lightdir - viewDir) * normal, 0.0f) / ((lightdir - viewDir).length() * normal.length()),
+						    shininess);
 #endif
 						value += specular * mspecular;
 					}
@@ -337,6 +331,36 @@ void Renderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 	_modelview = _view * transform;
 	_normalmat = _modelview.inverse().t();
 
+#ifdef FCULL_MESH
+	auto bbox = mesh->getBbox(Matrix4::identity(), false, true); // should precompute this in the mesh and store it
+	Vec3 corners[] = {
+		_modelview * bbox.corners(0), _modelview * bbox.corners(1), _modelview * bbox.corners(2),
+		_modelview * bbox.corners(3), _modelview * bbox.corners(4), _modelview * bbox.corners(5),
+		_modelview * bbox.corners(6), _modelview * bbox.corners(7),
+	};
+
+	int o[6] = { 0 };
+	for (int i = 0; i < 8; i++)
+	{
+		auto p = _projection * Vec4(corners[i], 1);
+		if (p.x > p.w)
+			o[0]++;
+		if (p.x < -p.w)
+			o[1]++;
+		if (p.y > p.w)
+			o[2]++;
+		if (p.y < -p.w)
+			o[3]++;
+		if (p.z < -p.w)
+			o[4]++;
+		if (p.z > p.w)
+			o[5]++;
+	}
+
+	if (o[0] == 8 || o[1] == 8 || o[2] == 8 || o[3] == 8 || o[4] == 8 || o[5] == 8)
+		return;
+#endif
+
 #ifdef PREMULT
 	_vertices.resize(mesh->vertices.length());
 	_normals.resize(mesh->normals.length());
@@ -364,6 +388,17 @@ void Renderer::paintMesh(TriMesh* mesh, const Matrix4& transform)
 		Vec3& a = _vertices[ia];
 		Vec3& b = _vertices[ib];
 		Vec3& c = _vertices[ic];
+
+#ifdef FCULL_TRIANGLE
+		auto pa = _projection * Vec4(a, 1);
+		auto pb = _projection * Vec4(b, 1);
+		auto pc = _projection * Vec4(c, 1);
+
+		if ((pa.x > pa.w && pb.x > pb.w && pc.x > pc.w) || (pa.x < -pa.w && pb.x < -pb.w && pc.x < -pc.w) ||
+		    (pa.y > pa.w && pb.y > pb.w && pc.y > pc.w) || (pa.y < -pa.w && pb.y < -pb.w && pc.y < -pc.w))
+			continue;
+#endif
+
 		Vec3& na = _normals[mesh->normalsI[i]];
 		Vec3& nb = _normals[mesh->normalsI[i + 1]];
 		Vec3& nc = _normals[mesh->normalsI[i + 2]];
@@ -387,7 +422,7 @@ asl::Array2<asl::Vec3> Renderer::getImage() const
 
 asl::Array2<asl::Vec3> Renderer::getRangeImage()
 {
-	bool persp = _projection(3, 3) == 0;
+	bool  persp = _projection(3, 3) == 0;
 	float zfar = persp ? _projection(2, 3) / (_projection(2, 2) + 1) : (_projection(2, 3) - 1) / _projection(2, 2);
 	float fardepth = persp ? zfar : 1.0f;
 	float neardepth = persp ? _znear : -1.0f;

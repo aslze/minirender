@@ -317,6 +317,6 @@ Shared<TriMesh> createArrow(const Vec3& origin, const Vec3& direction, float hea
 	auto head = createCone(headRadius, headLength, segments, true);
 	head->transform = Matrix4::translate(origin + dir * (direction.length() - headLength / 2)) * base;
 
-	return merge({ shaft, head }).as<TriMesh>();
+	return merge({ shaft, head });
 }
 }

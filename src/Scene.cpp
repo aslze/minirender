@@ -11,7 +11,7 @@ SceneNode::SceneNode()
 	transform = Matrix4::identity();
 }
 
-void SceneNode::collectShapes(Array<Renderable>& list, const asl::Matrix4& xform)
+void SceneNode::collectShapes(Array<Renderable>& list, const Matrix4& xform)
 {
 	auto tr = xform * transform;
 	for (auto& node : children)
@@ -20,7 +20,7 @@ void SceneNode::collectShapes(Array<Renderable>& list, const asl::Matrix4& xform
 	}
 }
 
-BBox SceneNode::getBbox(const asl::Matrix4& xform) const
+BBox SceneNode::getBbox(const Matrix4& xform, bool includeChildren, bool local) const
 {
 	BBox box;
 	for (auto& node : children)
@@ -28,21 +28,30 @@ BBox SceneNode::getBbox(const asl::Matrix4& xform) const
 	return box;
 }
 
-void TriMesh::collectShapes(asl::Array<Renderable>& list, const asl::Matrix4& xform)
+void TriMesh::collectShapes(Array<Renderable>& list, const Matrix4& xform)
 {
 	auto tr = xform * transform;
-	list << Renderable(this, tr);
+	if (indices.length() > 0)
+		list << Renderable(this, tr);
 	for (auto& node : children)
 		node->collectShapes(list, tr);
 }
 
-BBox TriMesh::getBbox(const asl::Matrix4& xform) const
+BBox TriMesh::getBbox(const Matrix4& xform, bool includeChildren, bool local) const
 {
 	BBox box;
-	for (auto& p : vertices)
-		box += xform * transform * p;
-	for (auto& node : children)
-		box += node->getBbox(xform * transform);
+	Matrix4 transform2 = xform * transform;
+	if (local)
+		for (auto& i : indices)
+			box += vertices[i];
+	else
+		for (auto& p : vertices)
+			box += transform2 * p;
+	if (includeChildren)
+	{
+		for (auto& node : children)
+			box += node->getBbox(transform2, includeChildren);
+	}
 	return box;
 }
 
