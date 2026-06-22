@@ -209,6 +209,7 @@ Shared<SceneNode> loadOBJ(const asl::String& filename)
 
 	Array<String> indices;
 	String        line;
+	String        oname;
 
 	while (!file.end())
 	{
@@ -247,16 +248,33 @@ Shared<SceneNode> loadOBJ(const asl::String& filename)
 			mesh->normalsI << -1;
 #endif
 		}
-		else if (parts[0] == "usemtl")
+		else if (parts[0] == "o" || parts[0] == "g")
 		{
-			String& name = parts[1];
+			const String& name = parts[1];
+			oname = name;
 			if (!meshes.has(name))
 			{
 				mesh = new TriMesh;
-				mesh->material = materials.get(name, materials[""]);
+				mesh->material = materials[""];
 				meshes[name] = mesh;
 			}
 			mesh = meshes[name];
+		}
+		else if (parts[0] == "usemtl")
+		{
+			const String& name = parts[1];
+			String        subname = oname + "__" + name;
+
+			if (!meshes.has(subname))
+			{
+				if (mesh->indices.length() > 2)
+				{
+					mesh = new TriMesh;
+					meshes[subname] = mesh;
+				}
+			}
+			//mesh = meshes[subname];
+			mesh->material = materials.get(name, materials[""]);
 		}
 		else if (parts[0] == "mtllib")
 		{
@@ -305,6 +323,8 @@ Shared<SceneNode> loadOBJ(const asl::String& filename)
 	for (auto& e : meshes)
 	{
 		Shared<TriMesh>& mesh = e.value;
+		if (mesh->indices.length() < 3)
+			continue;
 #ifdef OBJ_TRI
 		mesh->indices = triangulateIndices(mesh->indices);
 		mesh->texcoordsI = triangulateIndices(mesh->texcoordsI);
