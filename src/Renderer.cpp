@@ -180,13 +180,10 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 		ndc[i] = htransform(_projection, vertices[i]);
 	}
 
-	Matrix3 topx(w / 2, 0, w / 2, 0, -h / 2, h / 2);
-
 	for (int i = 0; i < 3; i++) // pixel coords
 	{
 		p[i].x = (1 + ndc[i].x) * (w / 2);
 		p[i].y = (1 - ndc[i].y) * (h / 2);
-		// p[i] = topx * ndc[i].xy();
 		pmin = min(pmin, p[i]);
 		pmax = max(pmax, p[i]);
 	}
@@ -201,19 +198,16 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 		return; // back face cull
 	}
 
-	float i2a = (a == 0) ? 0.0f : -1.0f / a;
+	// Sort indices, keeping the original attribute order and winding for shading.
+	int order[3] = { 0, 1, 2 };
+	if (p[order[0]].y > p[order[1]].y) swap(order[0], order[1]);
+	if (p[order[1]].y > p[order[2]].y) swap(order[1], order[2]);
+	if (p[order[0]].y > p[order[1]].y) swap(order[0], order[1]);
+	int top = order[0], middle = order[1], bottom = order[2];
+	Vec3 weights[3] = { Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1) };
 
-	// Vec2 n0 = (p[2] - p[1]).perpend() * i2a;
-	Vec2 n1 = (p[0] - p[2]).perpend() * i2a;
-	Vec2 n2 = (p[1] - p[0]).perpend() * i2a;
-
-	pmin.x = clamp(pmin.x, 0.f, w - 1);
-	pmax.x = clamp(pmax.x, 0.f, w - 1);
-	pmin.y = clamp(pmin.y, 0.f, h - 1);
-	pmax.y = clamp(pmax.y, 0.f, h - 1);
-
-	float zz[4] = { ndc[0].z, ndc[1].z, ndc[2].z, 1 };
-	float iz[4] = { -1 / vertices[0].z, -1 / vertices[1].z, -1 / vertices[2].z, 1 };
+	float zz[3] = { ndc[0].z, ndc[1].z, ndc[2].z };
+	float iz[3] = { -1 / vertices[0].z, -1 / vertices[1].z, -1 / vertices[2].z };
 
 	bool persp = _projection(3, 3) == 0;
 	bool hasspecular = _material->shininess != 0;
@@ -225,81 +219,103 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	auto        shininess = _material->shininess;
 	const auto& texture = _material->texture;
 
-	float k[4] = { 0, 0, 0, 0 };
-
-	for (float y = floor(pmin.y) + 0.5f; y <= pmax.y + 0.5f; y++)
+	// Each half uses the top-to-bottom edge and one of the two short edges.
+	// Half-open spans include top/left pixel centers and exclude bottom/right.
+	auto paintHalf = [&](int start, int end)
 	{
-		Vec2  pt(floor(pmin.x) + 0.5f, y);
-		float e1 = n1 * (pt - p[2]);
-		float e2 = n2 * (pt - p[0]);
-		for (float x = pt.x; x <= pmax.x + 0.5f; x++, e1 += n1.x, e2 += n2.x)
+		float dy = p[end].y - p[start].y;
+		if (dy <= 0)
+			return; // Flat tops/bottoms have no horizontal edge to walk.
+		int firstRow = (int)ceil(clamp(p[start].y - 0.5f, 0.f, h));
+		int lastRow = (int)ceil(clamp(p[end].y - 0.5f, 0.f, h));
+		float longDy = p[bottom].y - p[top].y;
+		for (int i = firstRow; i < lastRow; ++i)
 		{
-			if (e1 < 0 || e2 < 0 || 1 - e1 - e2 < 0)
-				continue;
-			k[0] = 1.f - e1 - e2;
-			k[1] = e1;
-			k[2] = e2;
-
-			float z;
-
-			if (persp)
+			float y = i + 0.5f;
+			float tLong = (y - p[top].y) / longDy;
+			float tShort = (y - p[start].y) / dy;
+			float left = p[top].x + tLong * (p[bottom].x - p[top].x);
+			float right = p[start].x + tShort * (p[end].x - p[start].x);
+			Vec3 leftWeights = weights[top] + tLong * (weights[bottom] - weights[top]);
+			Vec3 rightWeights = weights[start] + tShort * (weights[end] - weights[start]);
+			if (left > right)
 			{
-				z = 1.f / (k[0] * iz[0] + k[1] * iz[1] + k[2] * iz[2]);
-				k[0] *= iz[0] * z;
-				k[1] *= iz[1] * z;
-				k[2] *= iz[2] * z;
+				swap(left, right);
+				swap(leftWeights, rightWeights);
 			}
-			else
-				z = k[0] * zz[0] + k[1] * zz[1] + k[2] * zz[2] + k[3] * zz[3];
-
-			int i = int(y), j = int(x);
-
-			auto& pixdepth = _depth(i, j);
-
-			if (z < pixdepth)
+			if (right <= left)
+				continue;
+			int firstCol = (int)ceil(clamp(left - 0.5f, 0.f, w));
+			int lastCol = (int)ceil(clamp(right - 0.5f, 0.f, w));
+			if (firstCol >= lastCol)
+				continue;
+			Vec3 step = (rightWeights - leftWeights) * (1.f / (right - left));
+			Vec3 pixelWeights = leftWeights + (firstCol + 0.5f - left) * step;
+			for (int j = firstCol; j < lastCol; ++j, pixelWeights += step)
 			{
-				pixdepth = z;
+				float k[3] = { pixelWeights.x, pixelWeights.y, pixelWeights.z };
 
-				if (hastexture)
+				float z;
+
+				if (persp)
 				{
-					Vec2 uv = k[0] * texcoords[0] + k[1] * texcoords[1] + k[2] * texcoords[2];
-					color = texture(int(fract(uv.y) * texture.rows()), int(fract(uv.x) * texture.cols()));
+					z = 1.f / (k[0] * iz[0] + k[1] * iz[1] + k[2] * iz[2]);
+					k[0] *= iz[0] * z;
+					k[1] *= iz[1] * z;
+					k[2] *= iz[2] * z;
 				}
+				else
+					z = k[0] * zz[0] + k[1] * zz[1] + k[2] * zz[2];
 
-				Vec3 value = emissive;
+				auto& pixdepth = _depth(i, j);
 
-				if (_lighting)
+				if (z < pixdepth)
 				{
-					Vec3 position = k[0] * vertices[0] + k[1] * vertices[1] + k[2] * vertices[2];
-					Vec3 lightdir = _lightIsPoint ? (_lightdir - position).normalized() : _lightdir;
+					pixdepth = z;
 
-#ifndef FAST_LIGHT
-					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
-					value += (max(0.0f, normal * lightdir) + _ambient) * color;
-#else
-					Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]);
-					value += (max(0.0f, normal * lightdir) / normal.length() + _ambient) * color;
-#endif
-
-					if (hasspecular)
+					if (hastexture)
 					{
-						Vec3 viewDir = position.normalized();
-#ifndef FAST_LIGHT
-						float specular = pow(max((lightdir - viewDir).normalized() * normal, 0.0f), _material->shininess);
-#else
-						float specular = pow(
-						    max((lightdir - viewDir) * normal, 0.0f) / ((lightdir - viewDir).length() * normal.length()),
-						    shininess);
-#endif
-						value += specular * mspecular;
+						Vec2 uv = k[0] * texcoords[0] + k[1] * texcoords[1] + k[2] * texcoords[2];
+						color = texture(int(fract(uv.y) * texture.rows()), int(fract(uv.x) * texture.cols()));
 					}
-					if (_saveNormals)
-						_pnormals(i, j) = normal;
+
+					Vec3 value = emissive;
+
+					if (_lighting)
+					{
+						Vec3 position = k[0] * vertices[0] + k[1] * vertices[1] + k[2] * vertices[2];
+						Vec3 lightdir = _lightIsPoint ? (_lightdir - position).normalized() : _lightdir;
+
+#ifndef FAST_LIGHT
+						Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]).normalized();
+						value += (max(0.0f, normal * lightdir) + _ambient) * color;
+#else
+						Vec3 normal = (k[0] * normals[0] + k[1] * normals[1] + k[2] * normals[2]);
+						value += (max(0.0f, normal * lightdir) / normal.length() + _ambient) * color;
+#endif
+
+						if (hasspecular)
+						{
+							Vec3 viewDir = position.normalized();
+#ifndef FAST_LIGHT
+							float specular = pow(max((lightdir - viewDir).normalized() * normal, 0.0f), _material->shininess);
+#else
+							float specular = pow(
+							    max((lightdir - viewDir) * normal, 0.0f) / ((lightdir - viewDir).length() * normal.length()),
+							    shininess);
+#endif
+							value += specular * mspecular;
+						}
+						if (_saveNormals)
+							_pnormals(i, j) = normal;
+					}
+					_image(i, j) = value;
 				}
-				_image(i, j) = value;
 			}
 		}
-	}
+	};
+	paintHalf(top, middle);
+	paintHalf(middle, bottom);
 }
 
 void Renderer::render()
