@@ -216,7 +216,7 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 	bool hasspecular = _material->shininess != 0;
 	bool hastexture = _texturing && _material->texture.rows() > 0;
 
-	Vec3        color = _material->diffuse;
+	Vec3   color = _material->diffuse;
 	Vec3        emissive = _material->emissive;
 	auto        mspecular = _material->specular;
 	auto        shininess = _material->shininess;
@@ -228,8 +228,8 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 		float dy = p[end].y - p[start].y;
 		if (dy <= 0)
 			return; // Flat tops/bottoms have no horizontal edge to walk.
-		int   firstRow = (int)ceil(clamp(p[start].y - 0.5f, 0.f, h));
-		int   lastRow = (int)ceil(clamp(p[end].y - 0.5f, 0.f, h));
+		int   firstRow = (int)(clamp(p[start].y + 0.5f, 0.f, h));
+		int   lastRow = (int)(clamp(p[end].y + 0.5f, 0.f, h));
 		float longDy = p[bottom].y - p[top].y;
 		float ym = (p[start].y + p[end].y) / 2;
 		bool  lr = (p[top].x + (ym - p[top].y) / longDy * (p[bottom].x - p[top].x) <=
@@ -241,24 +241,30 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 		float dyl = lr ? longDy : dy;
 		float dyr = lr ? dy : longDy;
 		float y = firstRow + 0.5f;
+		float dxl = (p[l2].x - p[l1].x);
+		float dxr = (p[r2].x - p[r1].x);
+		Vec3  dweightsl = (weights[l2] - weights[l1]);
+		Vec3  dweightsr = (weights[r2] - weights[r1]);
 		for (int i = firstRow; i < lastRow; ++i, y++)
 		{
 			float tl = (y - p[l1].y) / dyl;
 			float tr = (y - p[r1].y) / dyr;
-			float left = p[l1].x + tl * (p[l2].x - p[l1].x);
-			float right = p[r1].x + tr * (p[r2].x - p[r1].x);
-			Vec3  leftWeights = weights[l1] + tl * (weights[l2] - weights[l1]);
-			Vec3  rightWeights = weights[r1] + tr * (weights[r2] - weights[r1]);
+			float left = p[l1].x + tl * dxl;
+			float right = p[r1].x + tr * dxr;
+			Vec3  leftWeights = weights[l1] + tl * dweightsl;
+			Vec3  rightWeights = weights[r1] + tr * dweightsr;
 
 			// if (right <= left)
 			//	continue;
-			int firstCol = (int)ceil(clamp(left - 0.5f, 0.f, w));
-			int lastCol = (int)ceil(clamp(right - 0.5f, 0.f, w));
-			// if (firstCol >= lastCol)
-			//	continue;
+			//int firstCol = (int)ceil(clamp(left - 0.5f, 0.f, w));
+			//int lastCol = (int)ceil(clamp(right - 0.5f, 0.f, w));
+			int firstCol = (int)(clamp(left + 0.5f, 0.f, w));
+			int lastCol = (int)(clamp(right + 0.5f, 0.f, w));
+			if (firstCol >= lastCol)
+				continue;
 			Vec3 step = (rightWeights - leftWeights) * (1.f / (right - left));
 			Vec3 pixelWeights = leftWeights + (firstCol + 0.5f - left) * step;
-			for (int j = firstCol; j < lastCol; ++j, pixelWeights += step)
+			for (int j = firstCol; j < lastCol; j++, pixelWeights += step)
 			{
 				float k[3] = { pixelWeights.x, pixelWeights.y, pixelWeights.z };
 
