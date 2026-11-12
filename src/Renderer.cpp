@@ -200,10 +200,13 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 	// Sort indices, keeping the original attribute order and winding for shading.
 	int order[3] = { 0, 1, 2 };
-	if (p[order[0]].y > p[order[1]].y) swap(order[0], order[1]);
-	if (p[order[1]].y > p[order[2]].y) swap(order[1], order[2]);
-	if (p[order[0]].y > p[order[1]].y) swap(order[0], order[1]);
-	int top = order[0], middle = order[1], bottom = order[2];
+	if (p[order[0]].y > p[order[1]].y)
+		swap(order[0], order[1]);
+	if (p[order[1]].y > p[order[2]].y)
+		swap(order[1], order[2]);
+	if (p[order[0]].y > p[order[1]].y)
+		swap(order[0], order[1]);
+	int  top = order[0], middle = order[1], bottom = order[2];
 	Vec3 weights[3] = { Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1) };
 
 	float zz[3] = { ndc[0].z, ndc[1].z, ndc[2].z };
@@ -221,34 +224,38 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 
 	// Each half uses the top-to-bottom edge and one of the two short edges.
 	// Half-open spans include top/left pixel centers and exclude bottom/right.
-	auto paintHalf = [&](int start, int end)
-	{
+	auto paintHalf = [&](int start, int end) {
 		float dy = p[end].y - p[start].y;
 		if (dy <= 0)
 			return; // Flat tops/bottoms have no horizontal edge to walk.
-		int firstRow = (int)ceil(clamp(p[start].y - 0.5f, 0.f, h));
-		int lastRow = (int)ceil(clamp(p[end].y - 0.5f, 0.f, h));
+		int   firstRow = (int)ceil(clamp(p[start].y - 0.5f, 0.f, h));
+		int   lastRow = (int)ceil(clamp(p[end].y - 0.5f, 0.f, h));
 		float longDy = p[bottom].y - p[top].y;
-		for (int i = firstRow; i < lastRow; ++i)
+		float ym = (p[start].y + p[end].y) / 2;
+		bool  lr = (p[top].x + (ym - p[top].y) / longDy * (p[bottom].x - p[top].x) <=
+                   p[start].x + (ym - p[start].y) / dy * (p[end].x - p[start].x));
+		int   l1 = lr ? top : start;
+		int   l2 = lr ? bottom : end;
+		int   r1 = lr ? start : top;
+		int   r2 = lr ? end : bottom;
+		float dyl = lr ? longDy : dy;
+		float dyr = lr ? dy : longDy;
+		float y = firstRow + 0.5f;
+		for (int i = firstRow; i < lastRow; ++i, y++)
 		{
-			float y = i + 0.5f;
-			float tLong = (y - p[top].y) / longDy;
-			float tShort = (y - p[start].y) / dy;
-			float left = p[top].x + tLong * (p[bottom].x - p[top].x);
-			float right = p[start].x + tShort * (p[end].x - p[start].x);
-			Vec3 leftWeights = weights[top] + tLong * (weights[bottom] - weights[top]);
-			Vec3 rightWeights = weights[start] + tShort * (weights[end] - weights[start]);
-			if (left > right)
-			{
-				swap(left, right);
-				swap(leftWeights, rightWeights);
-			}
-			if (right <= left)
-				continue;
+			float tl = (y - p[l1].y) / dyl;
+			float tr = (y - p[r1].y) / dyr;
+			float left = p[l1].x + tl * (p[l2].x - p[l1].x);
+			float right = p[r1].x + tr * (p[r2].x - p[r1].x);
+			Vec3  leftWeights = weights[l1] + tl * (weights[l2] - weights[l1]);
+			Vec3  rightWeights = weights[r1] + tr * (weights[r2] - weights[r1]);
+
+			// if (right <= left)
+			//	continue;
 			int firstCol = (int)ceil(clamp(left - 0.5f, 0.f, w));
 			int lastCol = (int)ceil(clamp(right - 0.5f, 0.f, w));
-			if (firstCol >= lastCol)
-				continue;
+			// if (firstCol >= lastCol)
+			//	continue;
 			Vec3 step = (rightWeights - leftWeights) * (1.f / (right - left));
 			Vec3 pixelWeights = leftWeights + (firstCol + 0.5f - left) * step;
 			for (int j = firstCol; j < lastCol; ++j, pixelWeights += step)
@@ -298,11 +305,12 @@ void Renderer::paintTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v
 						{
 							Vec3 viewDir = position.normalized();
 #ifndef FAST_LIGHT
-							float specular = pow(max((lightdir - viewDir).normalized() * normal, 0.0f), _material->shininess);
+							float specular =
+							    pow(max((lightdir - viewDir).normalized() * normal, 0.0f), _material->shininess);
 #else
-							float specular = pow(
-							    max((lightdir - viewDir) * normal, 0.0f) / ((lightdir - viewDir).length() * normal.length()),
-							    shininess);
+							float specular = pow(max((lightdir - viewDir) * normal, 0.0f) /
+							                         ((lightdir - viewDir).length() * normal.length()),
+							                     shininess);
 #endif
 							value += specular * mspecular;
 						}
