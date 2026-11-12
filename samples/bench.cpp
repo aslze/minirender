@@ -9,7 +9,7 @@ using namespace minirender;
 
 float rf(float z, float s)
 {
-	return 30 + 40 * sin(4 * z * (float)PI / s) / (4 * z * (float)PI / s);
+	return z == 0 ? 30 : (30 + 40 * sin(4 * z * (float)PI / s) / (4 * z * (float)PI / s));
 }
 
 Shared<TriMesh> createObject(int m, int n, bool usetex, Random& random)
